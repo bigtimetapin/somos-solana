@@ -41,6 +41,3 @@ port submitToEscrowFailureListener : (String -> msg) -> Sub msg
 
 
 port purchaseSecondaryFailureListener : (String -> msg) -> Sub msg
-
-
-port genericErrorListener : (String -> msg) -> Sub msg

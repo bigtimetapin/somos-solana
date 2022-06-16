@@ -28,6 +28,7 @@ import Msg.Msg exposing (Msg(..), resetViewport)
 import Msg.Phantom exposing (ToPhantomMsg(..))
 import Msg.Seller as FromSellerMsg
 import Sub.Anchor exposing (getCurrentStateSender, initProgramSender, purchasePrimarySender, purchaseSecondarySender, removeFromEscrowSender, submitToEscrowSender)
+import Sub.Lit exposing (encryptAssetsSender)
 import Sub.Phantom exposing (connectSender, openDownloadUrlSender, signMessageSender)
 import Sub.Sub as Sub
 import Url
@@ -378,6 +379,11 @@ update msg model =
                 FromAdminMsg.ViewLedger wallet ->
                     ( model
                     , getCurrentStateSender <| Role.encode <| Role.AdminWith <| Wallet.encode wallet
+                    )
+
+                FromAdminMsg.EncryptAssets wallet ->
+                    ( model
+                    , encryptAssetsSender <| Role.encode <| Role.AdminWith <| Wallet.encode wallet
                     )
 
         FromJsError string ->

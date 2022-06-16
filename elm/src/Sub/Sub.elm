@@ -4,6 +4,7 @@ import Msg.Anchor exposing (FromAnchorMsg(..))
 import Msg.Msg exposing (Msg(..))
 import Msg.Phantom exposing (FromPhantomMsg(..))
 import Sub.Anchor exposing (..)
+import Sub.Generic exposing (..)
 import Sub.Phantom exposing (..)
 
 

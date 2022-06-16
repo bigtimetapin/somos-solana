@@ -9,6 +9,7 @@ import {sign} from "./sign";
 import {download} from "./download";
 import {remove, submit} from "./escrow";
 import {secondary} from "./purchase/secondary";
+import {encrypt} from "../lit";
 
 
 // TODO; move this file to root
@@ -58,6 +59,18 @@ app.ports.initProgramSender.subscribe(async function (userJson) {
     } else {
         const msg = "could not init with release: " + more.release.toString();
         app.ports.initProgramFailureListener.send(msg);
+    }
+});
+
+// encrypt assets
+app.ports.encryptAssetsSender.subscribe(async function (userJson) {
+    // encrypt
+    try {
+        await encrypt();
+        // or catch error
+    } catch (error) {
+        console.log(error)
+        app.ports.genericErrorListener.send(error.toString());
     }
 });
 

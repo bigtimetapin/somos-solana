@@ -55,6 +55,15 @@ body admin =
                                         []
                                         [ Html.button
                                             [ class "is-button-1"
+                                            , onClick (FromAdmin <| FromAdminMsg.EncryptAssets wallet)
+                                            ]
+                                            [ Html.text "encrypt"
+                                            ]
+                                        ]
+                                    , Html.div
+                                        []
+                                        [ Html.button
+                                            [ class "is-button-1"
                                             , onClick (FromAdmin <| FromAdminMsg.Typing One "" wallet)
                                             ]
                                             [ Html.text "buy for other"
@@ -186,4 +195,4 @@ body admin =
 
 boss : Wallet
 boss =
-    "DEuG4JnzvMVxMFPoBVvf2GH38mn3ybunMxtfmVU3ms86"
+    "GG8E7PgGrZqu3nD4nMPrvWZGT9SUmkAPS3uubP8KG2zc"

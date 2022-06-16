@@ -12,7 +12,9 @@ import Task
 import Url
 
 
-type Msg
+type
+    Msg
+    -- system
     = NoOp
     | UrlChanged Url.Url
     | LinkClicked Browser.UrlRequest
@@ -26,6 +28,7 @@ type Msg
     | AwsPreSign (Result Http.Error Download.Response)
       -- user forms
     | FromSeller FromSellerMsg
+      -- admin
     | FromAdmin FromAdminMsg
       -- generic javascript error
     | FromJsError String
