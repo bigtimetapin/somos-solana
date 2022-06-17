@@ -27,6 +27,30 @@ describe("somos-solana", () => {
                 program.programId
             );
     });
+    let pdaPatron02PublicKey
+    before(async () => {
+        [pdaPatron02PublicKey, _] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [ledgerSeed, user02.key.publicKey.toBuffer()],
+                program.programId
+            );
+    })
+    let pdaPatron03PublicKey
+    before(async () => {
+        [pdaPatron03PublicKey, _] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [ledgerSeed, user03.key.publicKey.toBuffer()],
+                program.programId
+            );
+    })
+    let pdaPatron04PublicKey
+    before(async () => {
+        [pdaPatron04PublicKey, _] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [ledgerSeed, user04.key.publicKey.toBuffer()],
+                program.programId
+            );
+    })
     // init
     it("initializes ledger", async () => {
         const price = 0.1 * anchor.web3.LAMPORTS_PER_SOL
@@ -52,12 +76,17 @@ describe("somos-solana", () => {
         await program03.rpc.purchasePrimary({
             accounts: {
                 buyer: user03.key.publicKey,
-                recipient: user03.key.publicKey,
+                buyerAsPatron: pdaPatron03PublicKey,
                 boss: provider.wallet.publicKey,
                 ledger: pdaLedgerPublicKey,
                 systemProgram: anchor.web3.SystemProgram.programId,
             }
         });
+        const patron = await program03.account.patron.fetch(
+            pdaPatron03PublicKey
+        );
+        console.log(patron);
+        assert.ok(patron.is_owner = true);
         const actualLedger = await program03.account.ledger.fetch(
             pdaLedgerPublicKey
         );
@@ -82,6 +111,7 @@ describe("somos-solana", () => {
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             console.log(error)
             assert.ok(error.code === 6004)
@@ -95,21 +125,29 @@ describe("somos-solana", () => {
     });
     // failed purchase primary
     it("purchase primary failed without boss", async () => {
-        const purchaser = await createUser();
-        const _program = programForUser(purchaser)
         try {
-            await _program.rpc.purchasePrimary({
+            await program04.rpc.purchasePrimary({
                 accounts: {
-                    buyer: purchaser.key.publicKey,
-                    recipient: purchaser.key.publicKey,
-                    boss: purchaser.key.publicKey,
+                    buyer: user04.key.publicKey,
+                    buyerAsPatron: pdaPatron04PublicKey,
+                    boss: user04.key.publicKey, // should be boss not user04
                     ledger: pdaLedgerPublicKey,
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             assert.ok(error.code === 6001)
             console.log(error)
+        }
+        try {
+            _ = await program04.account.patron.fetch(
+                pdaPatron04PublicKey
+            ) // does not exist yet
+            assert.ok(false);
+        } catch (error) {
+            console.log(error)
+            assert.ok(true)
         }
     });
     // purchase primary
@@ -118,12 +156,13 @@ describe("somos-solana", () => {
             await program03.rpc.purchasePrimary({
                 accounts: {
                     buyer: user03.key.publicKey,
-                    recipient: user03.key.publicKey,
+                    buyerAsPatron: pdaPatron03PublicKey,
                     boss: provider.wallet.publicKey,
                     ledger: pdaLedgerPublicKey,
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             assert.ok(error.code === 6005)
             console.log(error)
@@ -138,15 +177,21 @@ describe("somos-solana", () => {
     // purchase primary
     it("purchase primary for someone else", async () => {
         const balance = await provider.connection.getBalance(provider.wallet.publicKey)
-        await program03.rpc.purchasePrimary({
+        await program03.rpc.purchasePrimaryForOther({
             accounts: {
                 buyer: user03.key.publicKey,
                 recipient: user02.key.publicKey,
+                recipientAsPatron: pdaPatron02PublicKey,
                 boss: provider.wallet.publicKey,
                 ledger: pdaLedgerPublicKey,
                 systemProgram: anchor.web3.SystemProgram.programId,
             }
         });
+        const patron = await program02.account.patron.fetch(
+            pdaPatron02PublicKey
+        );
+        console.log(patron);
+        assert.ok(patron.isOwner = true);
         const actualLedger = await program02.account.ledger.fetch(
             pdaLedgerPublicKey
         );
@@ -164,18 +209,17 @@ describe("somos-solana", () => {
     });
     // throw error on sold out purchase
     it("purchase primary sold out throws error", async () => {
-        const purchaser = await createUser();
-        const _program = programForUser(purchaser)
         try {
-            await _program.rpc.purchasePrimary({
+            await program04.rpc.purchasePrimary({
                 accounts: {
-                    buyer: purchaser.key.publicKey,
-                    recipient: purchaser.key.publicKey,
+                    buyer: user04.key.publicKey,
+                    buyerAsPatron: pdaPatron04PublicKey,
                     boss: provider.wallet.publicKey,
                     ledger: pdaLedgerPublicKey,
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             assert.ok(error.code === 6000)
             console.log(error)
@@ -214,6 +258,7 @@ describe("somos-solana", () => {
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             assert.ok(error.code === 6002)
             console.log(error);
@@ -235,6 +280,7 @@ describe("somos-solana", () => {
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             assert.ok(error.code === 6006)
             console.log(error);
@@ -247,23 +293,34 @@ describe("somos-solana", () => {
     });
     // purchase secondary
     it("fail on purchase secondary when item is not on escrow", async () => {
-        const buyer = await createUser();
-        const _program = programForUser(buyer)
-        const seller = user03.key.publicKey; // user03 never submitted for escrow
+        // players
+        const buyer = user04.key.publicKey;
+        const seller = user03.key.publicKey;
         const boss = provider.wallet.publicKey;
+        // rpc
         try {
-            await _program.rpc.purchaseSecondary({
+            await program04.rpc.purchaseSecondary({
                 accounts: {
-                    buyer: buyer.key.publicKey,
+                    buyer: buyer,
+                    buyerAsPatron: pdaPatron04PublicKey,
                     seller: seller,
+                    sellerAsPatron: pdaPatron03PublicKey,
                     boss: boss,
                     ledger: pdaLedgerPublicKey,
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            _ = await program.account.patron.fetch(
+                pdaPatron04PublicKey
+            ); // does not exist yet
+            assert.ok(false);
         } catch (error) {
-            assert.ok(error.code === 6003)
             console.log(error);
+            assert.ok(error.code === 6003);
+            const patron = await program.account.patron.fetch(
+                pdaPatron03PublicKey
+            );
+            assert.ok(patron.isOwner = true);
         }
     });
     // purchase secondary
@@ -279,17 +336,29 @@ describe("somos-solana", () => {
         await program04.rpc.purchaseSecondary({
             accounts: {
                 buyer: buyer,
+                buyerAsPatron: pdaPatron04PublicKey,
                 seller: seller,
+                sellerAsPatron: pdaPatron02PublicKey,
                 boss: boss,
                 ledger: pdaLedgerPublicKey,
                 systemProgram: anchor.web3.SystemProgram.programId,
             }
         });
         // PDAs
+        const patron02 = await program.account.patron.fetch(
+            pdaPatron02PublicKey
+        );
+        const patron04 = await program.account.patron.fetch(
+            pdaPatron04PublicKey
+        );
+        console.log(patron02)
+        console.log(patron04)
+        assert.ok(patron02.isOwner === false);
+        assert.ok(patron04.isOwner === true);
         const actualLedger = await program.account.ledger.fetch(
             pdaLedgerPublicKey
-        )
-        console.log(actualLedger)
+        );
+        console.log(actualLedger);
         // balances
         const newBalanceSeller = await provider.connection.getBalance(seller);
         const newBalanceBoss = await provider.connection.getBalance(boss);
@@ -312,17 +381,30 @@ describe("somos-solana", () => {
             await program04.rpc.purchaseSecondary({
                 accounts: {
                     buyer: buyer,
+                    buyerAsPatron: pdaPatron04PublicKey,
                     seller: seller,
+                    sellerAsPatron: pdaPatron02PublicKey,
                     boss: boss,
                     ledger: pdaLedgerPublicKey,
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             console.log(error);
             assert.ok(error.code === 6005)
         }
         // PDAs
+        const patron02 = await program.account.patron.fetch(
+            pdaPatron02PublicKey
+        );
+        const patron04 = await program.account.patron.fetch(
+            pdaPatron04PublicKey
+        );
+        console.log(patron02)
+        console.log(patron04)
+        assert.ok(patron02.isOwner === false);
+        assert.ok(patron04.isOwner === true);
         const actualLedger = await program.account.ledger.fetch(
             pdaLedgerPublicKey
         )
@@ -373,6 +455,7 @@ describe("somos-solana", () => {
                     systemProgram: anchor.web3.SystemProgram.programId,
                 }
             });
+            assert.ok(false);
         } catch (error) {
             console.log(error);
             assert.ok(error.code === 6003)

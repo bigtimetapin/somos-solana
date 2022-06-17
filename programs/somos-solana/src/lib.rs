@@ -33,14 +33,34 @@ pub mod somos_solana {
         ctx: Context<PurchasePrimary>
     ) -> Result<()> {
         let buyer = &ctx.accounts.buyer;
+        let buyer_as_patron = &mut ctx.accounts.buyer_as_patron;
+        let boss = &ctx.accounts.boss;
+        let ledger = &mut ctx.accounts.ledger;
+        Ledger::purchase_primary(
+            buyer,
+            &buyer.to_account_info(), // recipient
+            boss,
+            ledger,
+        ).map(|_|
+            buyer_as_patron.is_owner = true
+        )
+    }
+
+    pub fn purchase_primary_for_other(
+        ctx: Context<PurchasePrimaryForOther>
+    ) -> Result<()> {
+        let buyer = &ctx.accounts.buyer;
+        let recipient_as_patron = &mut ctx.accounts.recipient_as_patron;
         let recipient = &ctx.accounts.recipient;
         let boss = &ctx.accounts.boss;
         let ledger = &mut ctx.accounts.ledger;
         Ledger::purchase_primary(
             buyer,
-            recipient,
+            &recipient.to_account_info(),
             boss,
             ledger,
+        ).map(|_|
+            recipient_as_patron.is_owner = true
         )
     }
 
@@ -57,7 +77,9 @@ pub mod somos_solana {
         ctx: Context<PurchaseSecondary>
     ) -> Result<()> {
         let buyer = &ctx.accounts.buyer;
+        let buyer_as_patron = &mut ctx.accounts.buyer_as_patron;
         let seller = &ctx.accounts.seller;
+        let seller_as_patron = &mut ctx.accounts.seller_as_patron;
         let boss = &ctx.accounts.boss;
         let ledger = &mut ctx.accounts.ledger;
         EscrowItem::purchase_secondary(
@@ -65,6 +87,10 @@ pub mod somos_solana {
             buyer,
             seller,
             boss,
+        ).map(|_|
+            buyer_as_patron.is_owner = true
+        ).map(|_|
+            seller_as_patron.is_owner = false
         )
     }
 
@@ -95,8 +121,12 @@ pub struct InitializeLedger<'info> {
 pub struct PurchasePrimary<'info> {
     #[account(mut)]
     pub buyer: Signer<'info>,
-    #[account(mut)]
-    pub recipient: SystemAccount<'info>,
+    #[account(
+    init_if_needed,
+    space = 8 + Patron::LEN,
+    seeds = [& ledger.seed, buyer.key.as_ref()], bump, payer = buyer
+    )]
+    pub buyer_as_patron: Account<'info, Patron>,
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
@@ -104,6 +134,36 @@ pub struct PurchasePrimary<'info> {
     pub ledger: Account<'info, Ledger>,
     // system
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct PurchasePrimaryForOther<'info> {
+    #[account(mut)]
+    pub buyer: Signer<'info>,
+    #[account(mut)]
+    pub recipient: SystemAccount<'info>,
+    #[account(
+    init_if_needed,
+    space = 8 + Patron::LEN,
+    seeds = [& ledger.seed, recipient.key.as_ref()], bump, payer = buyer
+    )]
+    pub recipient_as_patron: Account<'info, Patron>,
+    // used to validate against persisted boss
+    #[account(mut)]
+    pub boss: SystemAccount<'info>,
+    #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
+    pub ledger: Account<'info, Ledger>,
+    // system
+    pub system_program: Program<'info, System>,
+}
+
+#[account]
+pub struct Patron {
+    pub is_owner: bool,
+}
+
+impl Patron {
+    pub const LEN: usize = 1;
 }
 
 #[account]
@@ -145,7 +205,7 @@ pub enum LedgerErrors {
 impl Ledger {
     pub fn purchase_primary<'a>(
         buyer: &Signer<'a>,
-        recipient: &SystemAccount<'a>,
+        recipient: &AccountInfo,
         boss: &SystemAccount<'a>,
         ledger: &mut Ledger,
     ) -> Result<()> {
@@ -235,9 +295,17 @@ pub struct PurchaseSecondary<'info> {
     // buyer
     #[account(mut)]
     pub buyer: Signer<'info>,
+    #[account(
+    init_if_needed,
+    space = 8 + Patron::LEN,
+    seeds = [& ledger.seed, buyer.key.as_ref()], bump, payer = buyer
+    )]
+    pub buyer_as_patron: Account<'info, Patron>,
     // seller
     #[account(mut)]
     pub seller: SystemAccount<'info>,
+    #[account(mut, seeds = [& ledger.seed, seller.key.as_ref()], bump)]
+    pub seller_as_patron: Account<'info, Patron>,
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
