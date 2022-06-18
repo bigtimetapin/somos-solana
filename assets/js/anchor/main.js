@@ -23,6 +23,7 @@ app.ports.connectSender.subscribe(async function (user) {
         [textEncoder.encode(ACCOUNT_SEED_01)],
         programID
     );
+    console.log(release01PubKey);
     // get program public key 02
     [release02PubKey, __] = await web3.PublicKey.findProgramAddress(
         [textEncoder.encode(ACCOUNT_SEED_02)],
@@ -83,10 +84,10 @@ app.ports.purchasePrimarySender.subscribe(async function (userJson) {
     const more = JSON.parse(user.more);
     // invoke purchase request: release 01
     if (more.release === 1) {
-        await primary(pp.program, pp.provider, more.recipient, release01PubKey, userJson);
+        await primary(pp.program, pp.provider, release01PubKey, userJson);
         // invoke purchase request: release 02
     } else if (more.release === 2) {
-        await primary(pp.program, pp.provider, more.recipient, release02PubKey, userJson);
+        await primary(pp.program, pp.provider, release02PubKey, userJson);
         // unsupported release
     } else {
         const msg = "could not purchase primary with release: " + more.release.toString();

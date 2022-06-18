@@ -19,19 +19,24 @@ export async function encrypt() {
 
     console.log("encrypting string")
     const {encryptedString, symmetricKey} = await LitJsSdk.encryptString(
-        "this is a secret message"
+        "this is a secret message that should be encrypted"
     );
 
     console.log("key: " + symmetricKey.toString())
     const solRpcConditions = [
         {
-            method: "",
-            params: [":userAddress"],
+            method: "getAccountInfo",
+            params: [
+                "EbaHyMB1KiPLouoCmtuKmQunytGuwRfx8EvbaaVtwb19",
+                {
+                    "encoding": "base64"
+                }
+            ],
             chain: chain,
             returnValueTest: {
-                key: "",
+                key: "$.result.value.data[0]",
                 comparator: "=",
-                value: "3XEuQQzBCZam4EfhLjF6sACBovq6VxR4PgB8ekk1enNQ",
+                value: "fn/w4RwfwigB",
             },
         },
     ];
@@ -42,7 +47,7 @@ export async function encrypt() {
         chain: chain,
         authSig: authSig,
         symmetricKey: symmetricKey,
-        permanent: true
+        permanent: false
     });
 
     console.log("getting key from networking")
