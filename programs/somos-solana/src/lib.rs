@@ -93,7 +93,7 @@ pub struct InitializeLedger<'info> {
 
 #[derive(Accounts)]
 pub struct PurchasePrimary<'info> {
-    #[account(mut)]
+    #[account()]
     pub buyer: Signer<'info>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
@@ -233,7 +233,7 @@ pub struct PurchaseSecondary<'info> {
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
     // buyer
-    #[account(mut)]
+    #[account()]
     pub buyer: Signer<'info>,
     // seller
     #[account(mut)]

@@ -48,7 +48,8 @@ describe("somos-solana", () => {
     });
     // purchase primary
     it("purchase primary", async () => {
-        const balance = await provider.connection.getBalance(provider.wallet.publicKey)
+        const balanceBoss = await provider.connection.getBalance(provider.wallet.publicKey);
+        const balanceBuyer = await provider.connection.getBalance(user03.key.publicKey);
         await program03.rpc.purchasePrimary({
             accounts: {
                 buyer: user03.key.publicKey,
@@ -61,15 +62,19 @@ describe("somos-solana", () => {
         const actualLedger = await program03.account.ledger.fetch(
             pdaLedgerPublicKey
         );
-        console.log(actualLedger)
-        const newBalance = await provider.connection.getBalance(provider.wallet.publicKey);
-        const diff = newBalance - balance
-        console.log(diff)
-        console.log(newBalance)
-        console.log(balance)
+        console.log(actualLedger);
+        const newBalanceBoss = await provider.connection.getBalance(provider.wallet.publicKey);
+        const newBalanceBuyer = await provider.connection.getBalance(user03.key.publicKey);
+        const diffBoss = newBalanceBoss - balanceBoss;
+        const diffBuyer = newBalanceBuyer - balanceBuyer;
+        console.log(diffBoss);
+        console.log(diffBuyer);
+        console.log(newBalanceBoss);
+        console.log(newBalanceBuyer);
         // assertions
         assert.ok(actualLedger.originalSupplyRemaining === 1)
-        assert.ok(diff === 100000000)
+        assert.ok(diffBoss === 100000000)
+        assert.ok(diffBuyer === -100005000) // plus fees
     });
     // submit escrow
     it("submit to escrow should fail when primary market is not sold out", async () => {
