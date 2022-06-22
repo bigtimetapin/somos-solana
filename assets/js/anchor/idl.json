@@ -11,9 +11,19 @@
           "isSigner": false
         },
         {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "user",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "systemProgram",
@@ -50,7 +60,7 @@
       "accounts": [
         {
           "name": "buyer",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -112,7 +122,7 @@
         },
         {
           "name": "buyer",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -192,6 +202,10 @@
             }
           },
           {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
             "name": "boss",
             "type": "publicKey"
           },
@@ -266,5 +280,8 @@
       "name": "ItemAlreadyInEscrow",
       "msg": "you've already submitted this item to escrow."
     }
-  ]
+  ],
+  "metadata": {
+    "address": "FffriA7x24t4EqEvov8rxEctNmedxirN4WevtvRkHCyA"
+  }
 }

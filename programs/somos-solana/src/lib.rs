@@ -1,9 +1,11 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{InitializeMint, Token};
 
-declare_id!("HQ1wD4yJytCvha9kZiooZNgCgTvJdAL5sY54AK4rh43o");
+declare_id!("FffriA7x24t4EqEvov8rxEctNmedxirN4WevtvRkHCyA");
 
 #[program]
 pub mod somos_solana {
+    use anchor_spl::token::initialize_mint;
     use super::*;
 
     pub fn initialize_ledger(
@@ -14,6 +16,7 @@ pub mod somos_solana {
         resale: f64,
     ) -> Result<()> {
         let ledger = &mut ctx.accounts.ledger;
+        let mint = &mut ctx.accounts.mint;
         // init ledger
         ledger.price = price;
         ledger.resale = resale;
@@ -21,12 +24,20 @@ pub mod somos_solana {
         ledger.original_supply_remaining = n;
         ledger.owners = Vec::new();
         ledger.escrow = Vec::new();
+        // persist mint for validation
+        ledger.mint = mint.key();
         // persist boss for validation
         ledger.boss = ctx.accounts.user.key();
         // pda
         ledger.seed = seed;
         ledger.bump = *ctx.bumps.get("ledger").unwrap();
-        Ok(())
+        // init mint
+        let cpi_context = InitializeLedger::cpi_context(
+          mint.to_account_info(),
+            ledger.to_account_info(),
+            ctx.accounts.token_program.to_account_info()
+        );
+        initialize_mint(cpi_context, 0, &ledger.key(), None)
     }
 
     pub fn purchase_primary(
@@ -85,10 +96,28 @@ pub mod somos_solana {
 pub struct InitializeLedger<'info> {
     #[account(init, seeds = [& seed], bump, payer = user, space = 10240)]
     pub ledger: Account<'info, Ledger>,
+    #[account()]
+    pub mint: SystemAccount<'info>,
     #[account(mut)]
     pub user: Signer<'info>,
-    // system
+    // token program
+    pub token_program: Program<'info, Token>,
+    // system program
     pub system_program: Program<'info, System>,
+}
+
+impl InitializeLedger<'_> {
+    fn cpi_context<'a, 'b, 'c, 'info>(
+        mint: AccountInfo<'info>,
+        authority: AccountInfo<'info>,
+        token_program: AccountInfo<'info>
+    ) -> CpiContext<'a, 'b, 'c, 'info, InitializeMint<'info>> {
+        let cpi_accounts = InitializeMint {
+            mint,
+            rent: authority
+        };
+        CpiContext::new(token_program, cpi_accounts)
+    }
 }
 
 #[derive(Accounts)]
@@ -102,7 +131,7 @@ pub struct PurchasePrimary<'info> {
     pub boss: SystemAccount<'info>,
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
-    // system
+    // system program
     pub system_program: Program<'info, System>,
 }
 
@@ -117,6 +146,8 @@ pub struct Ledger {
     pub owners: Vec<Pubkey>,
     // escrow
     pub escrow: Vec<EscrowItem>,
+    // persist mint for validation
+    pub mint: Pubkey,
     // persist boss for validation
     pub boss: Pubkey,
     // pda
@@ -224,7 +255,7 @@ pub struct SubmitToEscrow<'info> {
     pub ledger: Account<'info, Ledger>,
     // pubkey on ledger
     pub seller: Signer<'info>,
-    // system
+    // system program
     pub system_program: Program<'info, System>,
 }
 
@@ -241,7 +272,7 @@ pub struct PurchaseSecondary<'info> {
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
-    // system
+    // system program
     pub system_program: Program<'info, System>,
 }
 

@@ -1,5 +1,6 @@
 import assert from "assert";
 import anchor from "@project-serum/anchor";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
     provider,
     program,
@@ -27,6 +28,8 @@ describe("somos-solana", () => {
                 program.programId
             );
     });
+    // create mint key
+    const mint = new anchor.web3.Keypair();
     // init
     it("initializes ledger", async () => {
         const price = 0.1 * anchor.web3.LAMPORTS_PER_SOL
@@ -34,6 +37,8 @@ describe("somos-solana", () => {
             accounts: {
                 user: provider.wallet.publicKey,
                 ledger: pdaLedgerPublicKey,
+                mint: mint.publicKey,
+                tokenProgram: TOKEN_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
             }
         });
