@@ -1,6 +1,6 @@
 import {web3} from "@project-serum/anchor";
 import {ACCOUNT_SEED_01, ACCOUNT_SEED_02, programID} from "./config";
-import {getPP, textEncoder} from "./util.js";
+import {getPP} from "./util.js";
 import {getPhantom} from "../phantom";
 import {getLedger, sendLedgers} from "./state";
 import {init} from "./init";
@@ -20,12 +20,12 @@ let release02PubKey, __ = null;
 app.ports.connectSender.subscribe(async function (user) {
     // get program public key 01
     [release01PubKey, _] = await web3.PublicKey.findProgramAddress(
-        [textEncoder.encode(ACCOUNT_SEED_01)],
+        [ACCOUNT_SEED_01],
         programID
     );
     // get program public key 02
     [release02PubKey, __] = await web3.PublicKey.findProgramAddress(
-        [textEncoder.encode(ACCOUNT_SEED_02)],
+        [ACCOUNT_SEED_02],
         programID
     );
     // get phantom

@@ -5,7 +5,7 @@ import {PhantomWallet} from "./wallet";
 import idl from "./idl.json";
 
 export const textEncoder = new TextEncoder()
-const connection = new web3.Connection(network, preflightCommitment);
+export const connection = new web3.Connection(network, preflightCommitment);
 
 // get provider & program
 export function getPP(_phantom) {

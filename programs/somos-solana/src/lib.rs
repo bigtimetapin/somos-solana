@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{InitializeMint, Token};
+use anchor_spl::token::{initialize_mint, InitializeMint, Token, TokenAccount};
 
 declare_id!("FffriA7x24t4EqEvov8rxEctNmedxirN4WevtvRkHCyA");
 
 #[program]
 pub mod somos_solana {
-    use anchor_spl::token::initialize_mint;
     use super::*;
 
     pub fn initialize_ledger(
@@ -16,7 +15,7 @@ pub mod somos_solana {
         resale: f64,
     ) -> Result<()> {
         let ledger = &mut ctx.accounts.ledger;
-        let mint = &mut ctx.accounts.mint;
+        let auth = &ctx.accounts.auth;
         // init ledger
         ledger.price = price;
         ledger.resale = resale;
@@ -24,18 +23,43 @@ pub mod somos_solana {
         ledger.original_supply_remaining = n;
         ledger.owners = Vec::new();
         ledger.escrow = Vec::new();
-        // persist mint for validation
-        ledger.mint = mint.key();
         // persist boss for validation
         ledger.boss = ctx.accounts.user.key();
         // pda
         ledger.seed = seed;
         ledger.bump = *ctx.bumps.get("ledger").unwrap();
-        // init mint
+        // derive pda for auth token
+        // let (_, bump) = Pubkey::find_program_address(
+        //     &[&seed, &InitializeLedger::AUTH_SEED],
+        //     &somos_solana::ID,//&Pubkey::new("FffriA7x24t4EqEvov8rxEctNmedxirN4WevtvRkHCyA".as_ref()),
+        // );
+        // let ix0: Instruction = anchor_lang::solana_program::system_instruction::create_account(
+        //     ctx.accounts.user.key,
+        //     &auth.key(),
+        //     ctx.accounts.rent_program.minimum_balance(Mint::LEN),
+        //     Mint::LEN as u64,
+        //     &anchor_spl::token::ID,
+        // );
+        // //let ix1 = spl_token::instruction::initialize_mint(
+        // //    &anchor_spl::token::ID,
+        // //    &auth,
+        // //    &ledger.key(),
+        // //    None,
+        // //    0,
+        // //);
+        // anchor_lang::solana_program::program::invoke_signed(
+        //     &ix0,
+        //     &[ctx.accounts.user.to_account_info(),
+        //         cpi_context.accounts.mint,
+        //     ],
+        //     &[&[&InitializeLedger::AUTH_SEED, &[bump]]]
+        // );
+        // init mint for auth token
+        assert!(auth.owner == &anchor_spl::token::ID);
         let cpi_context = InitializeLedger::cpi_context(
-          mint.to_account_info(),
-            ledger.to_account_info(),
-            ctx.accounts.token_program.to_account_info()
+            auth.to_account_info(),
+            ctx.accounts.rent_program.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
         );
         initialize_mint(cpi_context, 0, &ledger.key(), None)
     }
@@ -96,25 +120,29 @@ pub mod somos_solana {
 pub struct InitializeLedger<'info> {
     #[account(init, seeds = [& seed], bump, payer = user, space = 10240)]
     pub ledger: Account<'info, Ledger>,
-    #[account()]
-    pub mint: SystemAccount<'info>,
+    #[account(mut)]
+    /// CHECK: Owned by token-program
+    pub auth: UncheckedAccount<'info>,
     #[account(mut)]
     pub user: Signer<'info>,
     // token program
     pub token_program: Program<'info, Token>,
+    // rent program
+    pub rent_program: Sysvar<'info, Rent>,
     // system program
     pub system_program: Program<'info, System>,
 }
 
 impl InitializeLedger<'_> {
+    //const AUTH_SEED: [u8; 16] = *b"authauthauthauth";
     fn cpi_context<'a, 'b, 'c, 'info>(
         mint: AccountInfo<'info>,
-        authority: AccountInfo<'info>,
-        token_program: AccountInfo<'info>
+        rent_program: AccountInfo<'info>,
+        token_program: AccountInfo<'info>,
     ) -> CpiContext<'a, 'b, 'c, 'info, InitializeMint<'info>> {
         let cpi_accounts = InitializeMint {
             mint,
-            rent: authority
+            rent: rent_program,
         };
         CpiContext::new(token_program, cpi_accounts)
     }
@@ -146,8 +174,6 @@ pub struct Ledger {
     pub owners: Vec<Pubkey>,
     // escrow
     pub escrow: Vec<EscrowItem>,
-    // persist mint for validation
-    pub mint: Pubkey,
     // persist boss for validation
     pub boss: Pubkey,
     // pda
