@@ -28,34 +28,7 @@ pub mod somos_solana {
         // pda
         ledger.seed = seed;
         ledger.bump = *ctx.bumps.get("ledger").unwrap();
-        // derive pda for auth token
-        // let (_, bump) = Pubkey::find_program_address(
-        //     &[&seed, &InitializeLedger::AUTH_SEED],
-        //     &somos_solana::ID,//&Pubkey::new("FffriA7x24t4EqEvov8rxEctNmedxirN4WevtvRkHCyA".as_ref()),
-        // );
-        // let ix0: Instruction = anchor_lang::solana_program::system_instruction::create_account(
-        //     ctx.accounts.user.key,
-        //     &auth.key(),
-        //     ctx.accounts.rent_program.minimum_balance(Mint::LEN),
-        //     Mint::LEN as u64,
-        //     &anchor_spl::token::ID,
-        // );
-        // //let ix1 = spl_token::instruction::initialize_mint(
-        // //    &anchor_spl::token::ID,
-        // //    &auth,
-        // //    &ledger.key(),
-        // //    None,
-        // //    0,
-        // //);
-        // anchor_lang::solana_program::program::invoke_signed(
-        //     &ix0,
-        //     &[ctx.accounts.user.to_account_info(),
-        //         cpi_context.accounts.mint,
-        //     ],
-        //     &[&[&InitializeLedger::AUTH_SEED, &[bump]]]
-        // );
         // init mint for auth token
-        // assert!(auth.owner == &anchor_spl::token::ID);
         let cpi_context = InitializeLedger::cpi_context(
             auth.to_account_info(),
             ctx.accounts.rent_program.to_account_info(),
