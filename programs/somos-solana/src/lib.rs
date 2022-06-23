@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{initialize_mint, InitializeMint, Mint, Token};
 
-declare_id!("2a7WuBMkMtZtZWYLir2FzToT1WqvE2NPZR5GseaBYc4f");
+declare_id!("GxPq8UigGEPnVpnLQTFWagqqE4i3bPGVTKnVSu4EExEk");
 
 #[program]
 pub mod somos_solana {
@@ -140,7 +140,7 @@ pub struct InitializeLedger<'info> {
 }
 
 impl InitializeLedger<'_> {
-    const AUTH_SEED: [u8; 16] = *b"authauthauthautz";
+    const AUTH_SEED: [u8; 16] = *b"authauthauthauth";
     fn cpi_context<'a, 'b, 'c, 'info>(
         mint: AccountInfo<'info>,
         rent_program: AccountInfo<'info>,

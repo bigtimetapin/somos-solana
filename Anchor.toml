@@ -1,11 +1,11 @@
 [programs.localnet]
-somos_solana = "2a7WuBMkMtZtZWYLir2FzToT1WqvE2NPZR5GseaBYc4f"
+somos_solana = "GxPq8UigGEPnVpnLQTFWagqqE4i3bPGVTKnVSu4EExEk"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
