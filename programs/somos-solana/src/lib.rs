@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{initialize_mint, InitializeMint, Token, TokenAccount};
+use anchor_spl::token::{initialize_mint, InitializeMint, Mint, Token};
 
-declare_id!("FffriA7x24t4EqEvov8rxEctNmedxirN4WevtvRkHCyA");
+declare_id!("2a7WuBMkMtZtZWYLir2FzToT1WqvE2NPZR5GseaBYc4f");
 
 #[program]
 pub mod somos_solana {
@@ -55,7 +55,7 @@ pub mod somos_solana {
         //     &[&[&InitializeLedger::AUTH_SEED, &[bump]]]
         // );
         // init mint for auth token
-        assert!(auth.owner == &anchor_spl::token::ID);
+        // assert!(auth.owner == &anchor_spl::token::ID);
         let cpi_context = InitializeLedger::cpi_context(
             auth.to_account_info(),
             ctx.accounts.rent_program.to_account_info(),
@@ -120,8 +120,14 @@ pub mod somos_solana {
 pub struct InitializeLedger<'info> {
     #[account(init, seeds = [& seed], bump, payer = user, space = 10240)]
     pub ledger: Account<'info, Ledger>,
-    #[account(mut)]
-    /// CHECK: Owned by token-program
+    /// CHECK: to be minted
+    #[account(
+    init,
+    seeds = [& seed, & InitializeLedger::AUTH_SEED], bump,
+    owner = anchor_spl::token::ID,
+    payer = user,
+    space = Mint::LEN
+    )]
     pub auth: UncheckedAccount<'info>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -134,7 +140,7 @@ pub struct InitializeLedger<'info> {
 }
 
 impl InitializeLedger<'_> {
-    //const AUTH_SEED: [u8; 16] = *b"authauthauthauth";
+    const AUTH_SEED: [u8; 16] = *b"authauthauthautz";
     fn cpi_context<'a, 'b, 'c, 'info>(
         mint: AccountInfo<'info>,
         rent_program: AccountInfo<'info>,
