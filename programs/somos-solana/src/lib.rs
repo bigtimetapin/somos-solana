@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{initialize_mint, InitializeMint, Mint, Token};
 
-declare_id!("7F46hgeR9CXNNh7uPZwaHAyBtGGSRMGcF8sTFBfMz7ME");
+declare_id!("5tqxHmWLrSQNttThGzeW3xHCm7TpvbQHgfRVkpYSk1yr");
 
 #[program]
 pub mod somos_solana {
@@ -112,17 +112,11 @@ pub struct InitializeLedger<'info> {
 }
 
 #[derive(Clone)]
-pub struct UninitializedMint(spl_token::state::Mint);
+pub struct UninitializedMint;
 
 impl anchor_lang::AccountDeserialize for UninitializedMint {
     fn try_deserialize_unchecked(_buf: &mut &[u8]) -> anchor_lang::Result<Self> {
-        Ok(UninitializedMint(spl_token::state::Mint {
-            mint_authority: Default::default(),
-            supply: 0,
-            decimals: 0,
-            is_initialized: false,
-            freeze_authority: Default::default(),
-        }))
+        Ok(UninitializedMint)
     }
 }
 
