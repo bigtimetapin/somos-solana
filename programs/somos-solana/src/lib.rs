@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{initialize_mint, InitializeMint, Mint, Token};
 
-declare_id!("GxPq8UigGEPnVpnLQTFWagqqE4i3bPGVTKnVSu4EExEk");
+declare_id!("7F46hgeR9CXNNh7uPZwaHAyBtGGSRMGcF8sTFBfMz7ME");
 
 #[program]
 pub mod somos_solana {
@@ -93,7 +93,6 @@ pub mod somos_solana {
 pub struct InitializeLedger<'info> {
     #[account(init, seeds = [& seed], bump, payer = user, space = 10240)]
     pub ledger: Account<'info, Ledger>,
-    /// CHECK: to be minted
     #[account(
     init,
     seeds = [& seed, & InitializeLedger::AUTH_SEED], bump,
@@ -101,7 +100,7 @@ pub struct InitializeLedger<'info> {
     payer = user,
     space = Mint::LEN
     )]
-    pub auth: UncheckedAccount<'info>,
+    pub auth: Account<'info, UninitializedMint>,
     #[account(mut)]
     pub user: Signer<'info>,
     // token program
@@ -110,6 +109,29 @@ pub struct InitializeLedger<'info> {
     pub rent_program: Sysvar<'info, Rent>,
     // system program
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Clone)]
+pub struct UninitializedMint(spl_token::state::Mint);
+
+impl anchor_lang::AccountDeserialize for UninitializedMint {
+    fn try_deserialize_unchecked(_buf: &mut &[u8]) -> anchor_lang::Result<Self> {
+        Ok(UninitializedMint(spl_token::state::Mint {
+            mint_authority: Default::default(),
+            supply: 0,
+            decimals: 0,
+            is_initialized: false,
+            freeze_authority: Default::default(),
+        }))
+    }
+}
+
+impl anchor_lang::AccountSerialize for UninitializedMint {}
+
+impl anchor_lang::Owner for UninitializedMint {
+    fn owner() -> Pubkey {
+        anchor_spl::token::ID
+    }
 }
 
 impl InitializeLedger<'_> {
