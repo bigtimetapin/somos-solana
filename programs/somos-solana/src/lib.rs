@@ -1,10 +1,11 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{initialize_mint, InitializeMint, Mint, Token};
+use anchor_spl::token::{initialize_mint, InitializeMint, Mint, MintTo, Token, TokenAccount};
 
-declare_id!("5tqxHmWLrSQNttThGzeW3xHCm7TpvbQHgfRVkpYSk1yr");
+declare_id!("66ZZziLbWhq7qAEE7HP6zkegvcPUYSvSggVuE3yz9fox");
 
 #[program]
 pub mod somos_solana {
+    use anchor_spl::token::mint_to;
     use super::*;
 
     pub fn initialize_ledger(
@@ -14,6 +15,7 @@ pub mod somos_solana {
         price: u64,
         resale: f64,
     ) -> Result<()> {
+        // accounts
         let ledger = &mut ctx.accounts.ledger;
         let auth = &ctx.accounts.auth;
         // init ledger
@@ -28,6 +30,7 @@ pub mod somos_solana {
         // pda
         ledger.seed = seed;
         ledger.bump = *ctx.bumps.get("ledger").unwrap();
+        ledger.auth_bump = *ctx.bumps.get("auth").unwrap();
         // init mint for auth token
         let cpi_context = InitializeLedger::cpi_context(
             auth.to_account_info(),
@@ -40,34 +43,54 @@ pub mod somos_solana {
     pub fn purchase_primary(
         ctx: Context<PurchasePrimary>
     ) -> Result<()> {
+        // accounts
+        let ledger = &mut ctx.accounts.ledger;
+        let auth = &ctx.accounts.auth;
         let buyer = &ctx.accounts.buyer;
         let recipient = &ctx.accounts.recipient;
+        let recipient_ata = &ctx.accounts.recipient_ata;
         let boss = &ctx.accounts.boss;
-        let ledger = &mut ctx.accounts.ledger;
-        Ledger::purchase_primary(
+        // invoke purchase-primary
+        match Ledger::purchase_primary(
             buyer,
             recipient,
             boss,
             ledger,
-        )
+        ) {
+            Ok(_) => {
+                // mint auth token
+                let cpi_context = PurchasePrimary::cpi_context(
+                    auth.to_account_info(),
+                    recipient_ata.to_account_info(),
+                    ledger.to_account_info(),
+                    ctx.accounts.token_program.to_account_info(),
+                );
+                mint_to(cpi_context, 1)
+            }
+            err @ Err(_) => { err }
+        }
     }
 
     pub fn submit_to_escrow(
         ctx: Context<SubmitToEscrow>,
         price: u64,
     ) -> Result<()> {
+        // accounts
         let seller = &ctx.accounts.seller;
         let ledger = &mut ctx.accounts.ledger;
+        // invoke submit-to-escrow
         EscrowItem::submit_to_escrow(seller, price, ledger)
     }
 
     pub fn purchase_secondary(
         ctx: Context<PurchaseSecondary>
     ) -> Result<()> {
+        // accounts
         let buyer = &ctx.accounts.buyer;
         let seller = &ctx.accounts.seller;
         let boss = &ctx.accounts.boss;
         let ledger = &mut ctx.accounts.ledger;
+        // invoke purchase-secondary
         EscrowItem::purchase_secondary(
             ledger,
             buyer,
@@ -79,8 +102,10 @@ pub mod somos_solana {
     pub fn remove_from_escrow(
         ctx: Context<SubmitToEscrow>
     ) -> Result<()> {
+        // accounts
         let seller = &ctx.accounts.seller;
         let ledger = &mut ctx.accounts.ledger;
+        // invoke remove-from-escrow
         EscrowItem::remove_from_escrow(seller, ledger)
     }
 }
@@ -145,17 +170,41 @@ impl InitializeLedger<'_> {
 
 #[derive(Accounts)]
 pub struct PurchasePrimary<'info> {
+    #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
+    pub ledger: Account<'info, Ledger>,
+    #[account(mut, seeds = [& ledger.seed, & InitializeLedger::AUTH_SEED], bump = ledger.auth_bump)]
+    pub auth: Account<'info, Mint>,
     #[account()]
     pub buyer: Signer<'info>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
+    #[account(mut)]
+    pub recipient_ata: Account<'info, TokenAccount>,
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
-    #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
-    pub ledger: Account<'info, Ledger>,
+    // token program
+    pub token_program: Program<'info, Token>,
+    // rent program
+    pub rent_program: Sysvar<'info, Rent>,
     // system program
     pub system_program: Program<'info, System>,
+}
+
+impl PurchasePrimary<'_> {
+    fn cpi_context<'a, 'b, 'c, 'info>(
+        mint: AccountInfo<'info>,
+        to: AccountInfo<'info>,
+        authority: AccountInfo<'info>,
+        token_program: AccountInfo<'info>,
+    ) -> CpiContext<'a, 'b, 'c, 'info, MintTo<'info>> {
+        let cpi_accounts = MintTo {
+            mint,
+            to,
+            authority,
+        };
+        CpiContext::new(token_program, cpi_accounts)
+    }
 }
 
 #[account]
@@ -174,6 +223,7 @@ pub struct Ledger {
     // pda
     pub seed: [u8; 16],
     pub bump: u8,
+    pub auth_bump: u8,
 }
 
 #[error_code]
