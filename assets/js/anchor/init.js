@@ -1,6 +1,6 @@
 import {web3, BN} from "@project-serum/anchor";
 import {TOKEN_PROGRAM_ID} from "@solana/spl-token";
-import {AUTH_SEED, programID} from "./config";
+import {AUTH_SEED} from "./config";
 
 export async function init(program, provider, ledger, seed, user, n, price, resale) {
     try {
@@ -8,7 +8,7 @@ export async function init(program, provider, ledger, seed, user, n, price, resa
         let auth, _;
         [auth, _] = await web3.PublicKey.findProgramAddress(
             [seed, AUTH_SEED],
-            programID
+            TOKEN_PROGRAM_ID
         );
         // compute price in lamports
         const priceInLamports = price * web3.LAMPORTS_PER_SOL

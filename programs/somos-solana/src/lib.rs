@@ -1,11 +1,17 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{initialize_mint, InitializeMint, Mint, MintTo, Token, TokenAccount};
+use anchor_lang::solana_program::program_pack::Pack;
+use anchor_spl::token::{
+    initialize_mint, mint_to, InitializeMint, Mint, MintTo, Token, TokenAccount, InitializeAccount,
+};
+// use anchor_spl::associated_token::get_associated_token_address;
 
-declare_id!("66ZZziLbWhq7qAEE7HP6zkegvcPUYSvSggVuE3yz9fox");
+pub use spl_token;
+
+declare_id!("u3RjZMD1WsNjPGwsBjwHWr2DpVLxW8PSd3Lku2q4Cek");
 
 #[program]
 pub mod somos_solana {
-    use anchor_spl::token::mint_to;
+    use anchor_spl::token::initialize_account;
     use super::*;
 
     pub fn initialize_ledger(
@@ -51,24 +57,58 @@ pub mod somos_solana {
         let recipient_ata = &ctx.accounts.recipient_ata;
         let boss = &ctx.accounts.boss;
         // invoke purchase-primary
-        match Ledger::purchase_primary(
-            buyer,
-            recipient,
-            boss,
-            ledger,
-        ) {
-            Ok(_) => {
-                // mint auth token
-                let cpi_context = PurchasePrimary::cpi_context(
-                    auth.to_account_info(),
-                    recipient_ata.to_account_info(),
-                    ledger.to_account_info(),
-                    ctx.accounts.token_program.to_account_info(),
-                );
-                mint_to(cpi_context, 1)
-            }
-            err @ Err(_) => { err }
-        }
+        let msg0 = format!("{}: {}", "ata: ", recipient_ata.key().to_string());
+        msg!(&msg0);
+        //match Ledger::purchase_primary(
+        //    buyer,
+        //    recipient,
+        //    boss,
+        //    ledger,
+        //) {
+        //    Ok(_) => {
+        //        // derive associated token account
+        //        // let ata = get_associated_token_address(
+        //        //     recipient.key,
+        //        //     &auth.key(),
+        //        // );
+        //        // validate ata
+        //        // assert_eq!(recipient_ata.key(), ata);
+        //        // build mint context
+        //        let mint_cpi_context = PurchasePrimary::mint_cpi_context(
+        //            auth.to_account_info(),
+        //            recipient_ata.to_account_info(),
+        //            ledger.to_account_info(),
+        //            ctx.accounts.token_program.to_account_info(),
+        //        );
+        //        // mint or init then mint
+        //        match recipient_ata.0 {
+        //            None => {
+        //                // built init context
+        //                let init_account_cpi_context = PurchasePrimary::init_account_cpi_context(
+        //                    recipient_ata.to_account_info(),
+        //                    auth.to_account_info(),
+        //                    recipient.to_account_info(),
+        //                    ctx.accounts.rent_program.to_account_info(),
+        //                    ctx.accounts.token_program.to_account_info(),
+        //                );
+        //                // init
+        //                match initialize_account(init_account_cpi_context) {
+        //                    Ok(_) => {
+        //                        // mint
+        //                        mint_to(mint_cpi_context, 1)
+        //                    }
+        //                    err @ Err(_) => { err }
+        //                }
+        //            }
+        //            Some(_) => {
+        //                // mint
+        //                mint_to(mint_cpi_context, 1)
+        //            }
+        //        }
+        //    }
+        //    err @ Err(_) => { err }
+        //}
+        Ok(())
     }
 
     pub fn submit_to_escrow(
@@ -172,14 +212,24 @@ impl InitializeLedger<'_> {
 pub struct PurchasePrimary<'info> {
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
-    #[account(mut, seeds = [& ledger.seed, & InitializeLedger::AUTH_SEED], bump = ledger.auth_bump)]
+    #[account(
+    mut,
+    seeds = [& ledger.seed, & InitializeLedger::AUTH_SEED], bump = ledger.auth_bump,
+    owner = anchor_spl::token::ID,
+    )]
     pub auth: Account<'info, Mint>,
-    #[account()]
+    #[account(mut)]
     pub buyer: Signer<'info>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
-    #[account(mut)]
-    pub recipient_ata: Account<'info, TokenAccount>,
+    #[account(
+    init,
+    seeds = [recipient.key.as_ref(), anchor_spl::token::ID.as_ref(), auth.key().as_ref()], bump,
+    owner = anchor_spl::associated_token::ID,
+    payer = buyer,
+    space = TokenAccount::LEN
+    )]
+    pub recipient_ata: Account<'info, MaybeTokenAccount>,
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
@@ -191,8 +241,41 @@ pub struct PurchasePrimary<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Clone)]
+pub struct MaybeTokenAccount(Option<spl_token::state::Account>);
+
+impl anchor_lang::AccountDeserialize for MaybeTokenAccount {
+    fn try_deserialize_unchecked(buf: &mut &[u8]) -> anchor_lang::Result<Self> {
+        match spl_token::state::Account::unpack(buf) {
+            Ok(account) => {
+                Ok(MaybeTokenAccount(Some(account)))
+            }
+            Err(error) => {
+                match error {
+                    ProgramError::UninitializedAccount => {
+                        // pass thru for init
+                        Ok(MaybeTokenAccount(None))
+                    }
+                    err => {
+                        // propagate
+                        Err(err.into())
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl anchor_lang::AccountSerialize for MaybeTokenAccount {}
+
+impl anchor_lang::Owner for MaybeTokenAccount {
+    fn owner() -> Pubkey {
+        ID
+    }
+}
+
 impl PurchasePrimary<'_> {
-    fn cpi_context<'a, 'b, 'c, 'info>(
+    fn mint_cpi_context<'a, 'b, 'c, 'info>(
         mint: AccountInfo<'info>,
         to: AccountInfo<'info>,
         authority: AccountInfo<'info>,
@@ -202,6 +285,22 @@ impl PurchasePrimary<'_> {
             mint,
             to,
             authority,
+        };
+        CpiContext::new(token_program, cpi_accounts)
+    }
+
+    fn init_account_cpi_context<'a, 'b, 'c, 'info>(
+        ata: AccountInfo<'info>,
+        auth: AccountInfo<'info>,
+        recipient: AccountInfo<'info>,
+        rent_program: AccountInfo<'info>,
+        token_program: AccountInfo<'info>,
+    ) -> CpiContext<'a, 'b, 'c, 'info, InitializeAccount<'info>> {
+        let cpi_accounts = InitializeAccount {
+            account: ata,
+            mint: auth,
+            authority: recipient,
+            rent: rent_program,
         };
         CpiContext::new(token_program, cpi_accounts)
     }

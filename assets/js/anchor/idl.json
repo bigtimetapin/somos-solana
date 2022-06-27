@@ -75,7 +75,7 @@
         },
         {
           "name": "buyer",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -307,6 +307,6 @@
     }
   ],
   "metadata": {
-    "address": "66ZZziLbWhq7qAEE7HP6zkegvcPUYSvSggVuE3yz9fox"
+    "address": "u3RjZMD1WsNjPGwsBjwHWr2DpVLxW8PSd3Lku2q4Cek"
   }
 }

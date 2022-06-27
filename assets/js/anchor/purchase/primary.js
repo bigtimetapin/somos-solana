@@ -1,9 +1,13 @@
 import {web3} from "@project-serum/anchor";
-import {AUTH_SEED, BOSS, preflightCommitment, programID} from "../config";
-import {TOKEN_PROGRAM_ID, getOrCreateAssociatedTokenAccount} from "@solana/spl-token";
+import {AUTH_SEED, BOSS, programID} from "../config";
+import {
+    TOKEN_PROGRAM_ID,
+    getOrCreateAssociatedTokenAccount,
+    getAssociatedTokenAddress
+} from "@solana/spl-token";
 import {connection} from "../util";
 
-export async function primary(program, provider, recipient, ledger, user) {
+export async function primary(program, provider, recipient, ledger, seed, user) {
     try {
         // build recipient pub key
         let recipientPublicKey = new web3.PublicKey(recipient);
@@ -11,15 +15,21 @@ export async function primary(program, provider, recipient, ledger, user) {
         let auth, _;
         [auth, _] = await web3.PublicKey.findProgramAddress(
             [seed, AUTH_SEED],
-            programID
+            TOKEN_PROGRAM_ID
         );
+        console.log(auth);
         // derive recipient associated token address
-        let recipientAta = await getOrCreateAssociatedTokenAccount(
-            connection,
-            provider.wallet,
+        //let recipientAta = await getOrCreateAssociatedTokenAccount(
+        //    connection,
+        //    provider.wallet,
+        //    auth,
+        //    recipientPublicKey
+        //);
+        let recipientAta = await getAssociatedTokenAddress(
             auth,
             recipientPublicKey
-        )
+        );
+        console.log(recipientAta);
         // invoke purchase primary
         await program.rpc.purchasePrimary({
             accounts: {
@@ -27,10 +37,11 @@ export async function primary(program, provider, recipient, ledger, user) {
                 auth: auth,
                 buyer: provider.wallet.publicKey,
                 recipient: recipientPublicKey,
-                recipientAta: recipientAta.address,
+                recipientAta: recipientAta,
                 boss: BOSS,
                 tokenProgram: TOKEN_PROGRAM_ID,
-                systemProgram: web3.SystemProgram.programId,
+                rentProgram: web3.SYSVAR_RENT_PUBKEY,
+                systemProgram: web3.SystemProgram.programId
             },
         });
         // send state to elm
