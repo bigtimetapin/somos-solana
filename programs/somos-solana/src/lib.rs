@@ -1,9 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_pack::Pack;
-use anchor_spl::token::{
-    initialize_mint, mint_to, InitializeMint, Mint, MintTo, Token, TokenAccount, InitializeAccount,
+use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount, InitializeAccount,
 };
-// use anchor_spl::associated_token::get_associated_token_address;
 
 pub use spl_token;
 
@@ -11,7 +9,6 @@ declare_id!("u3RjZMD1WsNjPGwsBjwHWr2DpVLxW8PSd3Lku2q4Cek");
 
 #[program]
 pub mod somos_solana {
-    use anchor_spl::token::initialize_account;
     use super::*;
 
     pub fn initialize_ledger(
@@ -23,7 +20,6 @@ pub mod somos_solana {
     ) -> Result<()> {
         // accounts
         let ledger = &mut ctx.accounts.ledger;
-        let auth = &ctx.accounts.auth;
         // init ledger
         ledger.price = price;
         ledger.resale = resale;
@@ -31,19 +27,14 @@ pub mod somos_solana {
         ledger.original_supply_remaining = n;
         ledger.owners = Vec::new();
         ledger.escrow = Vec::new();
+        // persist auth
+        ledger.auth = ctx.accounts.auth.key();
         // persist boss for validation
         ledger.boss = ctx.accounts.user.key();
         // pda
         ledger.seed = seed;
         ledger.bump = *ctx.bumps.get("ledger").unwrap();
-        ledger.auth_bump = *ctx.bumps.get("auth").unwrap();
-        // init mint for auth token
-        let cpi_context = InitializeLedger::cpi_context(
-            auth.to_account_info(),
-            ctx.accounts.rent_program.to_account_info(),
-            ctx.accounts.token_program.to_account_info(),
-        );
-        initialize_mint(cpi_context, 0, &ledger.key(), None)
+        Ok(())
     }
 
     pub fn purchase_primary(
@@ -160,63 +151,26 @@ pub struct InitializeLedger<'info> {
     pub ledger: Account<'info, Ledger>,
     #[account(
     init,
-    seeds = [& seed, & InitializeLedger::AUTH_SEED], bump,
-    owner = anchor_spl::token::ID,
-    payer = user,
-    space = Mint::LEN
+    mint::authority = ledger,
+    mint::decimals = 0,
+    payer = user
     )]
-    pub auth: Account<'info, UninitializedMint>,
+    pub auth: Account<'info, Mint>,
     #[account(mut)]
     pub user: Signer<'info>,
     // token program
     pub token_program: Program<'info, Token>,
-    // rent program
-    pub rent_program: Sysvar<'info, Rent>,
     // system program
     pub system_program: Program<'info, System>,
-}
-
-#[derive(Clone)]
-pub struct UninitializedMint;
-
-impl anchor_lang::AccountDeserialize for UninitializedMint {
-    fn try_deserialize_unchecked(_buf: &mut &[u8]) -> anchor_lang::Result<Self> {
-        Ok(UninitializedMint)
-    }
-}
-
-impl anchor_lang::AccountSerialize for UninitializedMint {}
-
-impl anchor_lang::Owner for UninitializedMint {
-    fn owner() -> Pubkey {
-        anchor_spl::token::ID
-    }
-}
-
-impl InitializeLedger<'_> {
-    const AUTH_SEED: [u8; 16] = *b"authauthauthauth";
-    fn cpi_context<'a, 'b, 'c, 'info>(
-        mint: AccountInfo<'info>,
-        rent_program: AccountInfo<'info>,
-        token_program: AccountInfo<'info>,
-    ) -> CpiContext<'a, 'b, 'c, 'info, InitializeMint<'info>> {
-        let cpi_accounts = InitializeMint {
-            mint,
-            rent: rent_program,
-        };
-        CpiContext::new(token_program, cpi_accounts)
-    }
+    // rent program
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
 pub struct PurchasePrimary<'info> {
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
-    #[account(
-    mut,
-    seeds = [& ledger.seed, & InitializeLedger::AUTH_SEED], bump = ledger.auth_bump,
-    owner = anchor_spl::token::ID,
-    )]
+    #[account(mut)]
     pub auth: Account<'info, Mint>,
     #[account(mut)]
     pub buyer: Signer<'info>,
@@ -317,12 +271,13 @@ pub struct Ledger {
     pub owners: Vec<Pubkey>,
     // escrow
     pub escrow: Vec<EscrowItem>,
+    // persist auth
+    pub auth: Pubkey,
     // persist boss for validation
     pub boss: Pubkey,
     // pda
     pub seed: [u8; 16],
     pub bump: u8,
-    pub auth_bump: u8,
 }
 
 #[error_code]

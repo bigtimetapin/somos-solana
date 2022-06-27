@@ -13,7 +13,7 @@
         {
           "name": "auth",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "user",
@@ -26,12 +26,12 @@
           "isSigner": false
         },
         {
-          "name": "rentProgram",
+          "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "systemProgram",
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         }
@@ -227,6 +227,10 @@
             }
           },
           {
+            "name": "auth",
+            "type": "publicKey"
+          },
+          {
             "name": "boss",
             "type": "publicKey"
           },
@@ -241,10 +245,6 @@
           },
           {
             "name": "bump",
-            "type": "u8"
-          },
-          {
-            "name": "authBump",
             "type": "u8"
           }
         ]
