@@ -70,7 +70,7 @@
         },
         {
           "name": "auth",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -99,12 +99,17 @@
           "isSigner": false
         },
         {
-          "name": "rentProgram",
+          "name": "associatedTokenProgram",
           "isMut": false,
           "isSigner": false
         },
         {
           "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         }
@@ -307,6 +312,6 @@
     }
   ],
   "metadata": {
-    "address": "u3RjZMD1WsNjPGwsBjwHWr2DpVLxW8PSd3Lku2q4Cek"
+    "address": "Hy5hYwxnZXNFJv8rvKkLRGmM4eBRnpFC1Wc9TxcELeXB"
   }
 }

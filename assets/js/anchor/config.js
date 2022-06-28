@@ -1,7 +1,7 @@
 import {web3} from "@project-serum/anchor";
 
 export const preflightCommitment = "processed";
-export const programID = new web3.PublicKey("u3RjZMD1WsNjPGwsBjwHWr2DpVLxW8PSd3Lku2q4Cek");
+export const programID = new web3.PublicKey("Hy5hYwxnZXNFJv8rvKkLRGmM4eBRnpFC1Wc9TxcELeXB");
 export const ACCOUNT_SEED_01 = Buffer.from("shortershortersh");
 export const ACCOUNT_SEED_02 = Buffer.from("robsonrobsonrobs");
 export const BOSS = new web3.PublicKey("3XEuQQzBCZam4EfhLjF6sACBovq6VxR4PgB8ekk1enNQ")

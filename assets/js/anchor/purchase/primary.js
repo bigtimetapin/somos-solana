@@ -1,35 +1,24 @@
 import {web3} from "@project-serum/anchor";
-import {AUTH_SEED, BOSS, programID} from "../config";
+import {BOSS} from "../config";
 import {
     TOKEN_PROGRAM_ID,
-    getOrCreateAssociatedTokenAccount,
-    getAssociatedTokenAddress
+    getAssociatedTokenAddress, ASSOCIATED_TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
-import {connection} from "../util";
 
 export async function primary(program, provider, recipient, ledger, seed, user) {
     try {
+        // fetch auth address
+        const _state = await program.account.ledger.fetch(ledger);
+        const auth = _state.auth;
+        console.log(auth.toString());
         // build recipient pub key
-        let recipientPublicKey = new web3.PublicKey(recipient);
-        // derive auth address
-        let auth, _;
-        [auth, _] = await web3.PublicKey.findProgramAddress(
-            [seed, AUTH_SEED],
-            TOKEN_PROGRAM_ID
-        );
-        console.log(auth);
+        const recipientPublicKey = new web3.PublicKey(recipient);
         // derive recipient associated token address
-        //let recipientAta = await getOrCreateAssociatedTokenAccount(
-        //    connection,
-        //    provider.wallet,
-        //    auth,
-        //    recipientPublicKey
-        //);
-        let recipientAta = await getAssociatedTokenAddress(
+        const recipientAta = await getAssociatedTokenAddress(
             auth,
             recipientPublicKey
         );
-        console.log(recipientAta);
+        console.log(recipientAta.toString());
         // invoke purchase primary
         await program.rpc.purchasePrimary({
             accounts: {
@@ -40,9 +29,11 @@ export async function primary(program, provider, recipient, ledger, seed, user) 
                 recipientAta: recipientAta,
                 boss: BOSS,
                 tokenProgram: TOKEN_PROGRAM_ID,
-                rentProgram: web3.SYSVAR_RENT_PUBKEY,
-                systemProgram: web3.SystemProgram.programId
+                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                systemProgram: web3.SystemProgram.programId,
+                rent: web3.SYSVAR_RENT_PUBKEY,
             },
+            signers: []
         });
         // send state to elm
         app.ports.getCurrentStateListener.send(user);
@@ -50,7 +41,7 @@ export async function primary(program, provider, recipient, ledger, seed, user) 
         console.log("primary purchase success");
     } catch (error) {
         // log error
-        console.log(error.toString());
+        console.log(error);
         // send error to elm
         app.ports.purchasePrimaryFailureListener.send(error.message)
     }
