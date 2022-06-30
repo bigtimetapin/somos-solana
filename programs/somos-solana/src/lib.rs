@@ -1,12 +1,11 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_pack::Pack;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount, InitializeAccount,
-};
+use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount};
 
 pub use spl_token;
 
-declare_id!("Hy5hYwxnZXNFJv8rvKkLRGmM4eBRnpFC1Wc9TxcELeXB");
+declare_id!("A1p79nxVZZa9FkB6Sv2Lp2G5hFCzTrTgZHs6G6fbNDx3");
 
 #[program]
 pub mod somos_solana {
@@ -48,6 +47,8 @@ pub mod somos_solana {
         let recipient = &ctx.accounts.recipient;
         let recipient_ata = &ctx.accounts.recipient_ata;
         let boss = &ctx.accounts.boss;
+        // const ESCROW_PDA_SEED: &[u8] = b"shortershortersh";
+        // let seeds = &[&ESCROW_PDA_SEED[..], &[ledger.bump]];
         // invoke purchase-primary
         match Ledger::purchase_primary(
             buyer,
@@ -61,17 +62,16 @@ pub mod somos_solana {
                     ledger.seed.as_ref(),
                     &[ledger.bump]
                 ];
-                let signer = &[&seeds[..]];
-                // build cpi context
-                let cpi_context = PurchasePrimary::cpi_context(
-                    auth.to_account_info(),
-                    recipient_ata.to_account_info(),
-                    ledger.to_account_info(),
-                    signer,
-                    ctx.accounts.token_program.to_account_info(),
-                );
+                // let signer = &[&seeds[..]];
                 // mint
-                mint_to(cpi_context, 1)
+                mint_to(
+                    ctx.accounts
+                        .cpi_context()
+                        .with_signer(
+                            &[&seeds[..]]
+                        ),
+                    1
+                )
             }
             err @ Err(_) => { err }
         }
@@ -171,23 +171,16 @@ pub struct PurchasePrimary<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-impl PurchasePrimary<'_> {
-    fn cpi_context<'a, 'b, 'c, 'info>(
-        mint: AccountInfo<'info>,
-        to: AccountInfo<'info>,
-        authority: AccountInfo<'info>,
-        authority_seeds: &'a[&'b [&'c [u8]]],
-        token_program: AccountInfo<'info>,
-    ) -> CpiContext<'a, 'b, 'c, 'info, MintTo<'info>> {
+impl<'info> PurchasePrimary<'info> {
+    fn cpi_context(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
         let cpi_accounts = MintTo {
-            mint,
-            to,
-            authority,
+            mint: self.auth.to_account_info(),
+            to: self.recipient_ata.to_account_info(),
+            authority: self.buyer.to_account_info(),
         };
-        CpiContext::new_with_signer(
-            token_program,
-            cpi_accounts,
-            authority_seeds,
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            cpi_accounts
         )
     }
 }
@@ -511,4 +504,24 @@ impl EscrowItem {
         let sol = anchor_lang::solana_program::native_token::lamports_to_sol(price);
         anchor_lang::solana_program::native_token::sol_to_lamports(sol * percentage)
     }
+}
+
+#[cfg(test)]
+mod test {
+
+    use {
+        super::*,
+        somos_solana::*
+
+    };
+
+    #[test]
+    fn foo() {
+       //let program_id = &Pubkey::new(b"A1p79nxVZZa9FkB6Sv2Lp2G5hFCzTrTgZHs6G6fbNDx3".as_ref());
+       //let seed: &[u8; 16] = b"shortershortersh";
+       //let (_pda, bump_seed) = Pubkey::find_program_address(&[seed], program_id);
+       //println!("{}", _pda);
+       //println!("{}", bump_seed);
+    }
+
 }
