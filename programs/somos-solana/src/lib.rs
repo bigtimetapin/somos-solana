@@ -126,7 +126,7 @@ pub struct InitializeLedger<'info> {
     pub ledger: Account<'info, Ledger>,
     #[account(
     init,
-    mint::authority = ledger,
+    mint::authority = user,
     mint::decimals = 9,
     payer = user
     )]
