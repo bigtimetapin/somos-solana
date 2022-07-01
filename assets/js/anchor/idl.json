@@ -70,7 +70,7 @@
         },
         {
           "name": "auth",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -310,8 +310,5 @@
       "name": "ItemAlreadyInEscrow",
       "msg": "you've already submitted this item to escrow."
     }
-  ],
-  "metadata": {
-    "address": "A1p79nxVZZa9FkB6Sv2Lp2G5hFCzTrTgZHs6G6fbNDx3"
-  }
+  ]
 }

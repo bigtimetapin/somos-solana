@@ -5,7 +5,7 @@ use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount};
 
 pub use spl_token;
 
-declare_id!("A1p79nxVZZa9FkB6Sv2Lp2G5hFCzTrTgZHs6G6fbNDx3");
+declare_id!("BLWVpsSBzbUWx7vyacCt8r4RL5cq5oVGXsAFc68MygtA");
 
 #[program]
 pub mod somos_solana {
@@ -59,8 +59,8 @@ pub mod somos_solana {
             Ok(_) => {
                 // build seeds for cpi context
                 let seeds = &[
-                    ledger.seed.as_ref(),
-                    &[ledger.bump]
+                    ctx.accounts.ledger.seed.as_ref(),
+                    &[ctx.accounts.ledger.bump]
                 ];
                 // let signer = &[&seeds[..]];
                 // mint
@@ -126,7 +126,7 @@ pub struct InitializeLedger<'info> {
     pub ledger: Account<'info, Ledger>,
     #[account(
     init,
-    mint::authority = user,
+    mint::authority = ledger,
     mint::decimals = 9,
     payer = user
     )]
@@ -145,19 +145,17 @@ pub struct InitializeLedger<'info> {
 pub struct PurchasePrimary<'info> {
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
-    #[account(address = ledger.auth)]
-    pub auth: Account<'info, Mint>,
+    /// CHECK: messi
+    #[account(mut)]
+    pub auth: UncheckedAccount<'info>,
     #[account(mut)]
     pub buyer: Signer<'info>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
-    #[account(
-    init,
-    associated_token::mint = auth,
-    associated_token::authority = recipient,
-    payer = buyer
+    /// CHECK: suarez
+    #[account(mut
     )]
-    pub recipient_ata: Account<'info, TokenAccount>,
+    pub recipient_ata: UncheckedAccount<'info>,
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
@@ -176,7 +174,7 @@ impl<'info> PurchasePrimary<'info> {
         let cpi_accounts = MintTo {
             mint: self.auth.to_account_info(),
             to: self.recipient_ata.to_account_info(),
-            authority: self.buyer.to_account_info(),
+            authority: self.ledger.to_account_info(),
         };
         CpiContext::new(
             self.token_program.to_account_info(),

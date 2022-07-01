@@ -32,8 +32,7 @@ export async function primary(program, provider, recipient, ledger, seed, user) 
                 associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
                 systemProgram: web3.SystemProgram.programId,
                 rent: web3.SYSVAR_RENT_PUBKEY,
-            },
-            signers: []
+            }
         });
         // send state to elm
         app.ports.getCurrentStateListener.send(user);
