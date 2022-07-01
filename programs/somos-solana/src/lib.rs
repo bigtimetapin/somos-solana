@@ -152,10 +152,13 @@ pub struct PurchasePrimary<'info> {
     pub buyer: Signer<'info>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
-    /// CHECK: suarez
-    #[account(mut
+    #[account(
+    init,
+    associated_token::mint = auth,
+    associated_token::authority = recipient,
+    payer = buyer
     )]
-    pub recipient_ata: UncheckedAccount<'info>,
+    pub recipient_ata: Account<'info, TokenAccount>,
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
