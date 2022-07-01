@@ -145,8 +145,9 @@ pub struct InitializeLedger<'info> {
 pub struct PurchasePrimary<'info> {
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
-    /// CHECK: messi
-    #[account(mut)]
+    /// CHECK: to annotate as a mint account
+    /// while also labeled as mut throws a compile-time validation error
+    #[account(mut, address = ledger.auth)]
     pub auth: UncheckedAccount<'info>,
     #[account(mut)]
     pub buyer: Signer<'info>,
