@@ -3,6 +3,7 @@ import {TOKEN_PROGRAM_ID} from "@solana/spl-token";
 
 export async function init(program, provider, ledger, seed, user, n, price, resale) {
     try {
+        // ephemeral keypair for auth
         let auth = new web3.Keypair();
         // compute price in lamports
         const priceInLamports = price * web3.LAMPORTS_PER_SOL

@@ -1,9 +1,6 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program_pack::Pack;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount};
-
-pub use spl_token;
 
 declare_id!("BLWVpsSBzbUWx7vyacCt8r4RL5cq5oVGXsAFc68MygtA");
 
@@ -42,13 +39,9 @@ pub mod somos_solana {
     ) -> Result<()> {
         // accounts
         let ledger = &mut ctx.accounts.ledger;
-        let auth = &ctx.accounts.auth;
         let buyer = &ctx.accounts.buyer;
         let recipient = &ctx.accounts.recipient;
-        let recipient_ata = &ctx.accounts.recipient_ata;
         let boss = &ctx.accounts.boss;
-        // const ESCROW_PDA_SEED: &[u8] = b"shortershortersh";
-        // let seeds = &[&ESCROW_PDA_SEED[..], &[ledger.bump]];
         // invoke purchase-primary
         match Ledger::purchase_primary(
             buyer,
@@ -62,7 +55,6 @@ pub mod somos_solana {
                     ctx.accounts.ledger.seed.as_ref(),
                     &[ctx.accounts.ledger.bump]
                 ];
-                // let signer = &[&seeds[..]];
                 // mint
                 mint_to(
                     ctx.accounts
@@ -70,7 +62,7 @@ pub mod somos_solana {
                         .with_signer(
                             &[&seeds[..]]
                         ),
-                    1
+                    1,
                 )
             }
             err @ Err(_) => { err }
@@ -182,7 +174,7 @@ impl<'info> PurchasePrimary<'info> {
         };
         CpiContext::new(
             self.token_program.to_account_info(),
-            cpi_accounts
+            cpi_accounts,
         )
     }
 }
@@ -506,24 +498,4 @@ impl EscrowItem {
         let sol = anchor_lang::solana_program::native_token::lamports_to_sol(price);
         anchor_lang::solana_program::native_token::sol_to_lamports(sol * percentage)
     }
-}
-
-#[cfg(test)]
-mod test {
-
-    use {
-        super::*,
-        somos_solana::*
-
-    };
-
-    #[test]
-    fn foo() {
-       //let program_id = &Pubkey::new(b"A1p79nxVZZa9FkB6Sv2Lp2G5hFCzTrTgZHs6G6fbNDx3".as_ref());
-       //let seed: &[u8; 16] = b"shortershortersh";
-       //let (_pda, bump_seed) = Pubkey::find_program_address(&[seed], program_id);
-       //println!("{}", _pda);
-       //println!("{}", bump_seed);
-    }
-
 }

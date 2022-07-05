@@ -10,7 +10,6 @@ export async function primary(program, provider, recipient, ledger, seed, user) 
         // fetch auth address
         const _state = await program.account.ledger.fetch(ledger);
         const auth = _state.auth;
-        console.log(auth.toString());
         // build recipient pub key
         const recipientPublicKey = new web3.PublicKey(recipient);
         // derive recipient associated token address
@@ -18,7 +17,6 @@ export async function primary(program, provider, recipient, ledger, seed, user) 
             auth,
             recipientPublicKey
         );
-        console.log(recipientAta.toString());
         // invoke purchase primary
         await program.rpc.purchasePrimary({
             accounts: {
