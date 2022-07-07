@@ -400,12 +400,6 @@ pub struct EscrowItem {
     pub seller: Pubkey,
 }
 
-impl PartialEq for EscrowItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.price == other.price && self.seller == other.seller
-    }
-}
-
 impl EscrowItem {
     pub fn submit_to_escrow(
         seller: &Signer,
