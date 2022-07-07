@@ -151,9 +151,19 @@
           "isSigner": false
         },
         {
+          "name": "auth",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "buyer",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "buyerAta",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "seller",
@@ -166,7 +176,22 @@
           "isSigner": false
         },
         {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         }

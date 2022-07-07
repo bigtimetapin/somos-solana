@@ -9,7 +9,8 @@ import {sign} from "./sign";
 import {download} from "./download";
 import {remove, submit} from "./escrow";
 import {secondary} from "./purchase/secondary";
-import {encrypt} from "../lit";
+import {encrypt} from "../lit/encrypt";
+import {decrypt} from "../lit/decrypt";
 
 
 // TODO; move this file to root
@@ -64,9 +65,17 @@ app.ports.initProgramSender.subscribe(async function (userJson) {
 
 // encrypt assets
 app.ports.encryptAssetsSender.subscribe(async function (userJson) {
+    // get provider & program
+    const pp = getPP(phantom);
     // encrypt
     try {
-        await encrypt();
+        const _state = await pp.program.account.ledger.fetch(release01PubKey);
+        const mint = _state.auth.toString();
+        console.log("get mint")
+        console.log(mint)
+        const encrypted = await encrypt(mint);
+        const decryptedString = await decrypt(mint, encrypted.encryptedSymmetricKey, encrypted.encryptedString);
+        console.log(decryptedString);
         // or catch error
     } catch (error) {
         console.log(error)

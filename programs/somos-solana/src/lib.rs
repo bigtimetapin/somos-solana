@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount, FreezeAccount};
 
-declare_id!("BLWVpsSBzbUWx7vyacCt8r4RL5cq5oVGXsAFc68MygtA");
+declare_id!("HGfrweUKP7gEE7bGwvZaAEFHhQLAjpd4ZK1nTQKN6CKW");
 
 #[program]
 pub mod somos_solana {
