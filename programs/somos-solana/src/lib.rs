@@ -1,11 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount};
+use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount, FreezeAccount};
 
 declare_id!("BLWVpsSBzbUWx7vyacCt8r4RL5cq5oVGXsAFc68MygtA");
 
 #[program]
 pub mod somos_solana {
+    use anchor_spl::token::freeze_account;
     use super::*;
 
     pub fn initialize_ledger(
@@ -89,12 +90,42 @@ pub mod somos_solana {
         let boss = &ctx.accounts.boss;
         let ledger = &mut ctx.accounts.ledger;
         // invoke purchase-secondary
-        EscrowItem::purchase_secondary(
+        match EscrowItem::purchase_secondary(
             ledger,
             buyer,
             seller,
             boss,
-        )
+        ) {
+            Ok(_) => {
+                // build seeds for cpi context
+                let seeds = &[
+                    ctx.accounts.ledger.seed.as_ref(),
+                    &[ctx.accounts.ledger.bump]
+                ];
+                // freeze seller account
+                match freeze_account(
+                    ctx.accounts
+                        .freeze_cpi_context()
+                        .with_signer(
+                            &[&seeds[..]]
+                        )
+                ) {
+                    Ok(_) => {
+                        // mint to buyer account
+                        mint_to(
+                            ctx.accounts
+                                .mint_to_cpi_context()
+                                .with_signer(
+                                    &[&seeds[..]]
+                                ),
+                            1,
+                        )
+                    }
+                    err @ Err(_) => { err }
+                }
+            }
+            err @ Err(_) => { err }
+        }
     }
 
     pub fn remove_from_escrow(
@@ -146,7 +177,7 @@ pub struct PurchasePrimary<'info> {
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
     #[account(
-    init,
+    init_if_needed,
     associated_token::mint = auth,
     associated_token::authority = recipient,
     payer = buyer
@@ -307,17 +338,60 @@ pub struct SubmitToEscrow<'info> {
 pub struct PurchaseSecondary<'info> {
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
+    /// CHECK: to annotate as a mint account
+    /// while also labeled as mut throws a compile-time validation error
+    #[account(mut, address = ledger.auth)]
+    pub auth: UncheckedAccount<'info>,
     // buyer
-    #[account()]
+    #[account(mut)]
     pub buyer: Signer<'info>,
+    #[account(
+    init_if_needed,
+    associated_token::mint = auth,
+    associated_token::authority = buyer,
+    payer = buyer
+    )]
+    pub buyer_ata: Account<'info, TokenAccount>,
     // seller
     #[account(mut)]
     pub seller: SystemAccount<'info>,
     // used to validate against persisted boss
     #[account(mut)]
     pub boss: SystemAccount<'info>,
+    // token program
+    pub token_program: Program<'info, Token>,
+    // associated token program
+    pub associated_token_program: Program<'info, AssociatedToken>,
     // system program
     pub system_program: Program<'info, System>,
+    // rent program
+    pub rent: Sysvar<'info, Rent>,
+}
+
+impl<'info> PurchaseSecondary<'info> {
+    fn mint_to_cpi_context(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+        let cpi_accounts = MintTo {
+            mint: self.auth.to_account_info(),
+            to: self.buyer_ata.to_account_info(),
+            authority: self.ledger.to_account_info(),
+        };
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            cpi_accounts,
+        )
+    }
+
+    fn freeze_cpi_context(&self) -> CpiContext<'_, '_, '_, 'info, FreezeAccount<'info>> {
+        let cpi_accounts = FreezeAccount {
+            account: self.buyer_ata.to_account_info(),
+            mint: self.auth.to_account_info(),
+            authority: self.ledger.to_account_info(),
+        };
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            cpi_accounts,
+        )
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
