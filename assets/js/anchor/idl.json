@@ -61,6 +61,32 @@
       ]
     },
     {
+      "name": "publishAssets",
+      "accounts": [
+        {
+          "name": "ledger",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "boss",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "hex",
+          "type": {
+            "array": [
+              "u8",
+              368
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "purchasePrimary",
       "accounts": [
         {
@@ -261,6 +287,14 @@
             "type": "publicKey"
           },
           {
+            "name": "assets",
+            "type": {
+              "option": {
+                "defined": "EncryptedAssets"
+              }
+            }
+          },
+          {
             "name": "boss",
             "type": "publicKey"
           },
@@ -282,6 +316,23 @@
     }
   ],
   "types": [
+    {
+      "name": "EncryptedAssets",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "hex",
+            "type": {
+              "array": [
+                "u8",
+                368
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "EscrowItem",
       "type": {
@@ -334,6 +385,11 @@
       "code": 6006,
       "name": "ItemAlreadyInEscrow",
       "msg": "you've already submitted this item to escrow."
+    },
+    {
+      "code": 6007,
+      "name": "ImmutableAssets",
+      "msg": "decentralized assets should be immutable."
     }
   ]
 }

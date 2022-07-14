@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount, FreezeAccount};
+use anchor_spl::token::{mint_to, freeze_account, Mint, MintTo, Token, TokenAccount, FreezeAccount};
+use crate::borsh::BorshDeserialize;
 
 declare_id!("HGfrweUKP7gEE7bGwvZaAEFHhQLAjpd4ZK1nTQKN6CKW");
 
 #[program]
 pub mod somos_solana {
-    use anchor_spl::token::freeze_account;
     use super::*;
 
     pub fn initialize_ledger(
@@ -33,6 +33,22 @@ pub mod somos_solana {
         ledger.seed = seed;
         ledger.bump = *ctx.bumps.get("ledger").unwrap();
         Ok(())
+    }
+
+    pub fn publish_assets(
+        ctx: Context<PublishAssets>,
+        hex: [u8; 368],
+    ) -> Result<()> {
+        let ledger = &mut ctx.accounts.ledger;
+        match ledger.assets {
+            None => {
+                ledger.assets = Some(EncryptedAssets { hex });
+                Ok(())
+            }
+            Some(_) => {
+                Err(LedgerErrors::ImmutableAssets.into())
+            }
+        }
     }
 
     pub fn purchase_primary(
@@ -165,6 +181,15 @@ pub struct InitializeLedger<'info> {
 }
 
 #[derive(Accounts)]
+pub struct PublishAssets<'info> {
+    #[account(mut, seeds = [& ledger.seed], bump = ledger.bump, has_one = boss)]
+    pub ledger: Account<'info, Ledger>,
+    // authority
+    #[account()]
+    pub boss: Signer<'info>,
+}
+
+#[derive(Accounts)]
 pub struct PurchasePrimary<'info> {
     #[account(mut, seeds = [& ledger.seed], bump = ledger.bump)]
     pub ledger: Account<'info, Ledger>,
@@ -223,11 +248,19 @@ pub struct Ledger {
     pub escrow: Vec<EscrowItem>,
     // persist auth
     pub auth: Pubkey,
+    // encrypted assets
+    pub assets: Option<EncryptedAssets>,
     // persist boss for validation
     pub boss: Pubkey,
     // pda
     pub seed: [u8; 16],
     pub bump: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct EncryptedAssets {
+    pub hex: [u8; 368],
+    // TODO; GG-SD url
 }
 
 #[error_code]
@@ -246,6 +279,8 @@ pub enum LedgerErrors {
     DontBeGreedy,
     #[msg("you've already submitted this item to escrow.")]
     ItemAlreadyInEscrow,
+    #[msg("decentralized assets should be immutable.")]
+    ImmutableAssets,
 }
 
 impl Ledger {

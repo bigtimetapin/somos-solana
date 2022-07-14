@@ -9,8 +9,7 @@ import {sign} from "./sign";
 import {download} from "./download";
 import {remove, submit} from "./escrow";
 import {secondary} from "./purchase/secondary";
-import {encrypt} from "../lit/encrypt";
-import {decrypt} from "../lit/decrypt";
+import {upload} from "./upload";
 
 
 // TODO; move this file to root
@@ -63,23 +62,23 @@ app.ports.initProgramSender.subscribe(async function (userJson) {
     }
 });
 
-// encrypt assets
-app.ports.encryptAssetsSender.subscribe(async function (userJson) {
+// upload assets
+app.ports.uploadAssetsSender.subscribe(async function (userJson) {
     // get provider & program
     const pp = getPP(phantom);
-    // encrypt
-    try {
-        const _state = await pp.program.account.ledger.fetch(release01PubKey);
-        const mint = _state.auth.toString();
-        console.log("get mint")
-        console.log(mint)
-        const encrypted = await encrypt(mint);
-        const decryptedString = await decrypt(mint, encrypted.encryptedSymmetricKey, encrypted.encryptedString);
-        console.log(decryptedString);
-        // or catch error
-    } catch (error) {
-        console.log(error)
-        app.ports.genericErrorListener.send(error.toString());
+    // decode user
+    const user = JSON.parse(userJson);
+    const more = JSON.parse(user.more);
+    // invoke upload assets: release 01
+    if (more.release === 1) {
+        await upload(pp.program, pp.provider, release01PubKey);
+        // invoke upload assets: release 02
+    } else if (more.release === 2) {
+        await upload(pp.program, pp.provider, release02PubKey);
+        // unsupported release
+    } else {
+        const msg = "could not upload assets with release: " + more.release.toString();
+        app.ports.genericErrorListener.send(msg);
     }
 });
 

@@ -33,6 +33,13 @@ export async function encrypt(mint) {
         symmetricKey: symmetricKey,
         permanent: true
     });
-
-    return {encryptedSymmetricKey, encryptedString}
+    console.log("before hex: " + encryptedSymmetricKey.toString());
+    console.log("length: " + encryptedSymmetricKey.length.toString());
+    // Note, below we convert the encryptedSymmetricKey from a UInt8Array to a hex string.
+    // This is because we obtained the encryptedSymmetricKey from "saveEncryptionKey" which returns a UInt8Array.
+    // But the getEncryptionKey method expects a hex string.
+    const encryptedHexKey = LitJsSdk.uint8arrayToString(encryptedSymmetricKey, "base16");
+    console.log("hex key: " + encryptedHexKey);
+    console.log("length: " + encryptedHexKey.length.toString());
+    return {encryptedHexKey, encryptedString}
 }

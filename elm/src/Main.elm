@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 -- MAIN
+-- todo; clean up these imports as (..)
 
 import Browser
 import Browser.Navigation as Nav
@@ -27,8 +28,7 @@ import Msg.Anchor exposing (ToAnchorMsg(..))
 import Msg.Msg exposing (Msg(..), resetViewport)
 import Msg.Phantom exposing (ToPhantomMsg(..))
 import Msg.Seller as FromSellerMsg
-import Sub.Anchor exposing (getCurrentStateSender, initProgramSender, purchasePrimarySender, purchaseSecondarySender, removeFromEscrowSender, submitToEscrowSender)
-import Sub.Lit exposing (encryptAssetsSender)
+import Sub.Anchor exposing (getCurrentStateSender, initProgramSender, purchasePrimarySender, purchaseSecondarySender, removeFromEscrowSender, submitToEscrowSender, uploadAssetsSender)
 import Sub.Phantom exposing (connectSender, openDownloadUrlSender, signMessageSender)
 import Sub.Sub as Sub
 import Url
@@ -179,6 +179,11 @@ update msg model =
                     in
                     ( model
                     , initProgramSender json
+                    )
+
+                UploadAssets wallet release ->
+                    ( model
+                    , uploadAssetsSender <| Role.encode <| Role.AdminWith <| Release.encode wallet release
                     )
 
                 PurchasePrimary wallet recipient role release ->
@@ -379,11 +384,6 @@ update msg model =
                 FromAdminMsg.ViewLedger wallet ->
                     ( model
                     , getCurrentStateSender <| Role.encode <| Role.AdminWith <| Wallet.encode wallet
-                    )
-
-                FromAdminMsg.EncryptAssets wallet ->
-                    ( model
-                    , encryptAssetsSender <| Role.encode <| Role.AdminWith <| Wallet.encode wallet
                     )
 
         FromJsError string ->

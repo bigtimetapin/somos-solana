@@ -19,3 +19,4 @@ default = []
 anchor-lang = { version = "0.24.2", features = ["init-if-needed"] }
 anchor-spl = "0.24.2"
 spl-token = "3.3.0"
+borsh = { version = "0.9.3", features = ["const-generics"] }

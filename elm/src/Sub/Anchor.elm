@@ -6,6 +6,9 @@ port module Sub.Anchor exposing (..)
 port initProgramSender : String -> Cmd msg
 
 
+port uploadAssetsSender : String -> Cmd msg
+
+
 port getCurrentStateSender : String -> Cmd msg
 
 

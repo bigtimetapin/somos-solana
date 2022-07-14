@@ -55,9 +55,9 @@ body admin =
                                         []
                                         [ Html.button
                                             [ class "is-button-1"
-                                            , onClick (FromAdmin <| FromAdminMsg.EncryptAssets wallet)
+                                            , onClick (ToAnchor <| UploadAssets wallet One)
                                             ]
-                                            [ Html.text "encrypt"
+                                            [ Html.text "upload"
                                             ]
                                         ]
                                     , Html.div
