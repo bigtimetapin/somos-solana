@@ -28,6 +28,9 @@ port purchaseSecondarySender : String -> Cmd msg
 -- listeners
 
 
+port getCurrentStateListener : (String -> msg) -> Sub msg
+
+
 port getCurrentStateSuccessListener : (String -> msg) -> Sub msg
 
 

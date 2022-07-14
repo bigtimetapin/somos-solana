@@ -14,10 +14,8 @@ type
 
 type
     FromPhantomMsg
-    -- some event success asking for current state
-    = GetCurrentState Json -- TODO: move to root
-      -- connection attempt
-    | ErrorOnConnection Error
+    -- connection attempt
+    = ErrorOnConnection Error
       -- sign message attempt
     | SuccessOnSignMessage Json
     | FailureOnSignMessage Error

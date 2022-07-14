@@ -1,7 +1,6 @@
 module Main exposing (main)
 
 -- MAIN
--- todo; clean up these imports as (..)
 
 import Browser
 import Browser.Navigation as Nav
@@ -28,8 +27,8 @@ import Msg.Anchor exposing (ToAnchorMsg(..))
 import Msg.Msg exposing (Msg(..), resetViewport)
 import Msg.Phantom exposing (ToPhantomMsg(..))
 import Msg.Seller as FromSellerMsg
-import Sub.Anchor exposing (getCurrentStateSender, initProgramSender, purchasePrimarySender, purchaseSecondarySender, removeFromEscrowSender, submitToEscrowSender, uploadAssetsSender)
-import Sub.Phantom exposing (connectSender, openDownloadUrlSender, signMessageSender)
+import Sub.Anchor exposing (..)
+import Sub.Phantom exposing (..)
 import Sub.Sub as Sub
 import Url
 import View.About.About
@@ -92,51 +91,6 @@ update msg model =
 
         FromPhantom fromPhantomMsg ->
             case fromPhantomMsg of
-                Msg.Phantom.GetCurrentState json ->
-                    case Role.decode json of
-                        Ok role ->
-                            case role of
-                                Role.BuyerWith moreJson ->
-                                    case Wallet.decode moreJson of
-                                        Ok wallet ->
-                                            ( { model | state = Buy (Buyer.WaitingForStateLookup wallet) }
-                                            , getCurrentStateSender json
-                                            )
-
-                                        Err error ->
-                                            ( { model | state = State.Error error }
-                                            , Cmd.none
-                                            )
-
-                                Role.SellerWith moreJson ->
-                                    case Wallet.decode moreJson of
-                                        Ok wallet ->
-                                            ( { model | state = Sell (Seller.WaitingForStateLookup wallet) }
-                                            , getCurrentStateSender json
-                                            )
-
-                                        Err error ->
-                                            ( { model | state = State.Error error }
-                                            , Cmd.none
-                                            )
-
-                                Role.AdminWith moreJson ->
-                                    case Wallet.decode moreJson of
-                                        Ok wallet ->
-                                            ( { model | state = Admin (Admin.HasWallet wallet) }
-                                            , Cmd.none
-                                            )
-
-                                        Err error ->
-                                            ( { model | state = State.Error error }
-                                            , Cmd.none
-                                            )
-
-                        Err error ->
-                            ( { model | state = State.Error error }
-                            , Cmd.none
-                            )
-
                 Msg.Phantom.ErrorOnConnection string ->
                     ( { model | state = State.Error string }
                     , Cmd.none
@@ -277,6 +231,52 @@ update msg model =
 
         FromAnchor fromAnchorMsg ->
             case fromAnchorMsg of
+                -- init state lookup loop
+                Msg.Anchor.GetCurrentState json ->
+                    case Role.decode json of
+                        Ok role ->
+                            case role of
+                                Role.BuyerWith moreJson ->
+                                    case Wallet.decode moreJson of
+                                        Ok wallet ->
+                                            ( { model | state = Buy (Buyer.WaitingForStateLookup wallet) }
+                                            , getCurrentStateSender json
+                                            )
+
+                                        Err error ->
+                                            ( { model | state = State.Error error }
+                                            , Cmd.none
+                                            )
+
+                                Role.SellerWith moreJson ->
+                                    case Wallet.decode moreJson of
+                                        Ok wallet ->
+                                            ( { model | state = Sell (Seller.WaitingForStateLookup wallet) }
+                                            , getCurrentStateSender json
+                                            )
+
+                                        Err error ->
+                                            ( { model | state = State.Error error }
+                                            , Cmd.none
+                                            )
+
+                                Role.AdminWith moreJson ->
+                                    case Wallet.decode moreJson of
+                                        Ok wallet ->
+                                            ( { model | state = Admin (Admin.HasWallet wallet) }
+                                            , Cmd.none
+                                            )
+
+                                        Err error ->
+                                            ( { model | state = State.Error error }
+                                            , Cmd.none
+                                            )
+
+                        Err error ->
+                            ( { model | state = State.Error error }
+                            , Cmd.none
+                            )
+
                 -- state lookup
                 Msg.Anchor.SuccessOnStateLookup json ->
                     let

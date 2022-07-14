@@ -16,10 +16,6 @@ subs =
             (\error ->
                 FromPhantom (ErrorOnConnection error)
             )
-        , getCurrentStateListener
-            (\pubKey ->
-                FromPhantom (GetCurrentState pubKey)
-            )
 
         -- phantom sign message
         , signMessageSuccessListener
@@ -32,6 +28,12 @@ subs =
             )
 
         -- anchor get current state
+        , getCurrentStateListener
+            (\pubKey ->
+                FromAnchor (GetCurrentState pubKey)
+            )
+
+        -- anchor get current state attempt
         , getCurrentStateSuccessListener
             (\jsonString ->
                 FromAnchor (SuccessOnStateLookup jsonString)

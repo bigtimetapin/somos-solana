@@ -22,8 +22,10 @@ type alias Price =
 type
     FromAnchorMsg
     -- TODO; clean up failures in favor of generic
-    -- state lookup attempt
-    = SuccessOnStateLookup String
+    -- some event success asking for current state
+    = GetCurrentState Json
+      -- state lookup attempt
+    | SuccessOnStateLookup Json
     | FailureOnStateLookup String
       -- init program attempt
     | FailureOnInitProgram String
@@ -33,3 +35,7 @@ type
     | FailureOnSubmitToEscrow String
       -- purchase secondary attempt
     | FailureOnPurchaseSecondary String
+
+
+type alias Json =
+    String
