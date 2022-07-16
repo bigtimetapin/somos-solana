@@ -3,7 +3,7 @@ import {chain} from "./config";
 import {solRpcConditions} from "./util";
 
 
-export async function encrypt(mint) {
+export async function encrypt(mint, files) {
     // build client
     const client = new LitJsSdk.LitNodeClient()
     // await for connection
@@ -18,12 +18,11 @@ export async function encrypt(mint) {
     console.log("invoking signature request")
     const authSig = await LitJsSdk.checkAndSignAuthMessage({chain: chain})
 
-    console.log("encrypting string")
-    const {encryptedString, symmetricKey} = await LitJsSdk.encryptString(
-        "using lit protocol for decentralized auth"
+    console.log("encrypting files")
+    const {encryptedZip, symmetricKey} = await LitJsSdk.zipAndEncryptFiles(
+        files
     );
-
-    console.log("key: " + symmetricKey.toString())
+    console.log("key: " + symmetricKey.toString());
 
     console.log("pushing key to network")
     const encryptedSymmetricKey = await client.saveEncryptionKey({
@@ -41,5 +40,5 @@ export async function encrypt(mint) {
     const encryptedHexKey = LitJsSdk.uint8arrayToString(encryptedSymmetricKey, "base16");
     console.log("hex key: " + encryptedHexKey);
     console.log("length: " + encryptedHexKey.length.toString());
-    return {encryptedHexKey, encryptedString}
+    return {encryptedHexKey, encryptedZip}
 }

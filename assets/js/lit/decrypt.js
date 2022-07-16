@@ -2,7 +2,7 @@ import {solRpcConditions} from "./util";
 import LitJsSdk from "lit-js-sdk";
 import {chain} from "./config";
 
-export async function decrypt(mint, encryptedHexKey, encryptedString) {
+export async function decrypt(mint, encryptedHexKey, encryptedZip) {
     // build client
     const client = new LitJsSdk.LitNodeClient()
     // await for connection
@@ -21,9 +21,9 @@ export async function decrypt(mint, encryptedHexKey, encryptedString) {
     });
     console.log("retrieved key: " + retrievedSymmetricKey.toString())
 
-    console.log("decrypting string")
-    return await LitJsSdk.decryptString(
-        encryptedString,
+    console.log("decrypting zip file")
+    return await LitJsSdk.decryptZip(
+        encryptedZip,
         retrievedSymmetricKey
     )
 }

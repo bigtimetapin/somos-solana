@@ -1,7 +1,7 @@
 module View.Admin.Admin exposing (body)
 
 import Html exposing (Html)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (accept, class, for, id, multiple, name, type_)
 import Html.Events exposing (onClick, onInput)
 import Model.Admin exposing (Admin(..))
 import Model.Release as Release exposing (Release(..))
@@ -52,8 +52,22 @@ body admin =
                                             ]
                                         ]
                                     , Html.div
-                                        []
-                                        [ Html.button
+                                        [ class "has-border-2"
+                                        ]
+                                        [ Html.form
+                                            []
+                                            [ Html.input
+                                                [ id "gg-sd-zip"
+                                                , type_ "file"
+                                                , multiple True
+                                                , accept <|
+                                                    String.join
+                                                        ", "
+                                                        [ ".mp3", ".wav", ".png", ".jpeg", "jpg" ]
+                                                ]
+                                                []
+                                            ]
+                                        , Html.button
                                             [ class "is-button-1"
                                             , onClick (ToAnchor <| UploadAssets wallet One)
                                             ]
