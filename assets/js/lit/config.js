@@ -1,7 +1,7 @@
 import {network} from "../anchor/config";
 
 export let chain = null;
-if (network === "https://api.mainnet-beta.solana.com") {
+if (network === "https://api.mainnet-beta.solana.com/") {
     chain = "solana";
 } else if (network === "https://api.devnet.solana.com") {
     chain = "solanaDevnet";
