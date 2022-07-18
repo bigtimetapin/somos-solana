@@ -22,6 +22,7 @@ test-ledger
 ## js
 /node_modules
 assets/js/node_modules
+!assets/js/node_modules/@shadow-drive/sdk/dist/methods/upload-file.js
 assets/js/bundle.js
 download/bundle.js
 download/index.js
