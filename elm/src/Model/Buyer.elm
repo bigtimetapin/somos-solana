@@ -26,8 +26,8 @@ getWallet anchor =
 
         Download downloadStatus ->
             case downloadStatus of
-                DownloadStatus.InvokedAndWaiting phantomSignature ->
-                    Just phantomSignature.userDecoded
+                DownloadStatus.InvokedAndWaiting wallet ->
+                    Just wallet
 
-                DownloadStatus.Done response ->
-                    Just response.user
+                DownloadStatus.Done wallet _ ->
+                    Just wallet

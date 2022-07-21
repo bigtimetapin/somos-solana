@@ -2,10 +2,9 @@ module Msg.Msg exposing (Msg(..), resetViewport)
 
 import Browser
 import Browser.Dom as Dom
-import Http
-import Http.Response as Download
 import Msg.Admin exposing (FromAdminMsg)
 import Msg.Anchor exposing (FromAnchorMsg, ToAnchorMsg)
+import Msg.Generic exposing (FromJsMsg, ToJsMsg)
 import Msg.Phantom exposing (FromPhantomMsg, ToPhantomMsg)
 import Msg.Seller exposing (FromSellerMsg)
 import Task
@@ -24,14 +23,13 @@ type
       -- anchor sub
     | ToAnchor ToAnchorMsg
     | FromAnchor FromAnchorMsg
-      -- aws url pre-sign
-    | AwsPreSign (Result Http.Error Download.Response)
+      -- generic js sub
+    | ToJs ToJsMsg
+    | FromJs FromJsMsg
       -- user forms
     | FromSeller FromSellerMsg
       -- admin
     | FromAdmin FromAdminMsg
-      -- generic javascript error
-    | FromJsError String
 
 
 resetViewport : Cmd Msg

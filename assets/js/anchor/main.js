@@ -5,11 +5,10 @@ import {getPhantom} from "../phantom";
 import {getLedger, sendLedgers} from "./state";
 import {init} from "./init";
 import {primary} from "./purchase/primary";
-import {sign} from "./sign";
-import {download} from "./download";
 import {remove, submit} from "./escrow";
 import {secondary} from "./purchase/secondary";
 import {upload} from "./upload";
+import {decrypt} from "../lit/decrypt";
 
 
 // TODO; move this file to root
@@ -162,15 +161,19 @@ app.ports.purchaseSecondarySender.subscribe(async function (userJson) {
     }
 });
 
-// sign message
-app.ports.signMessageSender.subscribe(async function (user) {
-    // invoke sign message
-    await sign(phantom, user);
-});
-
-// open download url
-app.ports.openDownloadUrlSender.subscribe(async function (json) {
-    const obj = JSON.parse(json);
-    // download
-    download(obj.url);
+// download
+app.ports.downloadSender.subscribe(async function (userJson) {
+    // get provider & program
+    const pp = getPP(phantom);
+    // decode json
+    const user = JSON.parse(userJson);
+    // invoke decrypt
+    if (user.release === 1) {
+        await decrypt(pp.program, release01PubKey, userJson);
+    } else if (user.release === 2) {
+        await decrypt(pp.program, release02PubKey, userJson);
+    } else {
+        const msg = "could not invoke download of release: " + more.release.toString();
+        app.ports.genericErrorListener(msg);
+    }
 });

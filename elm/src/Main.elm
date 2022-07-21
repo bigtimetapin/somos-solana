@@ -5,9 +5,6 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (Html)
-import Http.Download as Download
-import Http.Error
-import Http.Response
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Model.Admin as Admin
@@ -15,7 +12,6 @@ import Model.Buyer as Buyer exposing (Buyer)
 import Model.DownloadStatus as DownloadStatus
 import Model.Ledger as Ledger exposing (Ledger)
 import Model.Model as Model exposing (Model)
-import Model.Phantom as Phantom
 import Model.Release as Release
 import Model.Role as Role exposing (Role, WithContext)
 import Model.Seller as Seller exposing (Seller(..))
@@ -24,10 +20,12 @@ import Model.State as State exposing (State(..))
 import Model.Wallet as Wallet
 import Msg.Admin as FromAdminMsg
 import Msg.Anchor exposing (ToAnchorMsg(..))
+import Msg.Generic as GenericMsg
 import Msg.Msg exposing (Msg(..), resetViewport)
 import Msg.Phantom exposing (ToPhantomMsg(..))
 import Msg.Seller as FromSellerMsg
 import Sub.Anchor exposing (..)
+import Sub.Generic exposing (downloadSender)
 import Sub.Phantom exposing (..)
 import Sub.Sub as Sub
 import Url
@@ -84,42 +82,10 @@ update msg model =
                     , connectSender (Role.toString role)
                     )
 
-                SignMessage user ->
-                    ( model
-                    , signMessageSender user
-                    )
-
         FromPhantom fromPhantomMsg ->
             case fromPhantomMsg of
                 Msg.Phantom.ErrorOnConnection string ->
                     ( { model | state = State.Error string }
-                    , Cmd.none
-                    )
-
-                Msg.Phantom.SuccessOnSignMessage signatureString ->
-                    let
-                        maybeSignature : Result Decode.Error Phantom.PhantomSignature
-                        maybeSignature =
-                            Phantom.decodeSignature signatureString
-                    in
-                    case maybeSignature of
-                        Ok signature ->
-                            ( { model
-                                | state =
-                                    Buy <|
-                                        Buyer.Download <|
-                                            DownloadStatus.InvokedAndWaiting signature
-                              }
-                            , Download.post signature
-                            )
-
-                        Err error ->
-                            ( { model | state = State.Error (Decode.errorToString error) }
-                            , Cmd.none
-                            )
-
-                Msg.Phantom.FailureOnSignMessage error ->
-                    ( { model | state = State.Error error }
                     , Cmd.none
                     )
 
@@ -343,30 +309,6 @@ update msg model =
                 Msg.Anchor.FailureOnPurchaseSecondary error ->
                     ( { model | state = State.Error error }, Cmd.none )
 
-        AwsPreSign result ->
-            case result of
-                Ok response ->
-                    let
-                        encoder : Encode.Value
-                        encoder =
-                            Encode.object
-                                [ ( "url", Encode.string response.url )
-                                , ( "user", Encode.string response.user )
-                                ]
-
-                        jsonString : String
-                        jsonString =
-                            Encode.encode 0 encoder
-                    in
-                    ( { model | state = Buy (Buyer.Download (DownloadStatus.Done response)) }
-                    , openDownloadUrlSender jsonString
-                    )
-
-                Err error ->
-                    ( { model | state = State.Error (Http.Error.toString error) }
-                    , Cmd.none
-                    )
-
         FromSeller selling ->
             case selling of
                 FromSellerMsg.Typing release string ledgers ->
@@ -386,10 +328,37 @@ update msg model =
                     , getCurrentStateSender <| Role.encode <| Role.AdminWith <| Wallet.encode wallet
                     )
 
-        FromJsError string ->
-            ( { model | state = Error string }
-            , Cmd.none
-            )
+        ToJs toJsMsg ->
+            case toJsMsg of
+                GenericMsg.Download wallet release ->
+                    ( { model | state = State.Buy <| Buyer.Download <| DownloadStatus.InvokedAndWaiting wallet }
+                    , downloadSender <| Release.encode wallet release
+                    )
+
+        FromJs fromJsMsg ->
+            case fromJsMsg of
+                GenericMsg.DownloadSuccess json ->
+                    case Release.decode json of
+                        Ok success ->
+                            ( { model
+                                | state =
+                                    State.Buy <|
+                                        Buyer.Download <|
+                                            DownloadStatus.Done success.wallet <|
+                                                Release.fromInt success.release
+                              }
+                            , Cmd.none
+                            )
+
+                        Err string ->
+                            ( { model | state = Error string }
+                            , Cmd.none
+                            )
+
+                GenericMsg.Error string ->
+                    ( { model | state = Error string }
+                    , Cmd.none
+                    )
 
 
 

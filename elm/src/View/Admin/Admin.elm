@@ -209,4 +209,4 @@ body admin =
 
 boss : Wallet
 boss =
-    "3XEuQQzBCZam4EfhLjF6sACBovq6VxR4PgB8ekk1enNQ"
+    "DEuG4JnzvMVxMFPoBVvf2GH38mn3ybunMxtfmVU3ms86"

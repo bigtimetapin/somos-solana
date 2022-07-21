@@ -6,20 +6,8 @@ port module Sub.Phantom exposing (..)
 port connectSender : String -> Cmd msg
 
 
-port signMessageSender : String -> Cmd msg
-
-
-port openDownloadUrlSender : String -> Cmd msg
-
-
 
 -- listeners
 
 
 port connectFailureListener : (String -> msg) -> Sub msg
-
-
-port signMessageSuccessListener : (String -> msg) -> Sub msg
-
-
-port signMessageFailureListener : (String -> msg) -> Sub msg

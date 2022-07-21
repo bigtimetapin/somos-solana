@@ -1,9 +1,9 @@
 module Model.DownloadStatus exposing (DownloadStatus(..))
 
-import Http.Response as Download
-import Model.Phantom exposing (PhantomSignature)
+import Model.Release exposing (Release)
+import Model.Wallet exposing (Wallet)
 
 
 type DownloadStatus
-    = InvokedAndWaiting PhantomSignature
-    | Done Download.Response
+    = InvokedAndWaiting Wallet
+    | Done Wallet Release

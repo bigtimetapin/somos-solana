@@ -1,11 +1,16 @@
 module Sub.Sub exposing (subs)
 
 import Msg.Anchor exposing (FromAnchorMsg(..))
+import Msg.Generic as GenericMsg
 import Msg.Msg exposing (Msg(..))
 import Msg.Phantom exposing (FromPhantomMsg(..))
 import Sub.Anchor exposing (..)
 import Sub.Generic exposing (..)
 import Sub.Phantom exposing (..)
+
+
+
+-- TODO; drop specific failures
 
 
 subs : Sub Msg
@@ -15,16 +20,6 @@ subs =
           connectFailureListener
             (\error ->
                 FromPhantom (ErrorOnConnection error)
-            )
-
-        -- phantom sign message
-        , signMessageSuccessListener
-            (\jsonString ->
-                FromPhantom (SuccessOnSignMessage jsonString)
-            )
-        , signMessageFailureListener
-            (\error ->
-                FromPhantom (FailureOnSignMessage error)
             )
 
         -- anchor get current state
@@ -67,9 +62,15 @@ subs =
                 FromAnchor (FailureOnPurchaseSecondary error)
             )
 
+        -- generic download success
+        , downloadSuccessListener
+            (\jsonString ->
+                FromJs <| GenericMsg.DownloadSuccess jsonString
+            )
+
         -- generic error
         , genericErrorListener
             (\error ->
-                FromJsError error
+                FromJs <| GenericMsg.Error error
             )
         ]

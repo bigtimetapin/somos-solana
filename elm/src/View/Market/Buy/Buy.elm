@@ -12,6 +12,7 @@ import Model.Sol as Sol
 import Model.State as State exposing (State(..))
 import Model.Wallet as PublicKey exposing (Wallet)
 import Msg.Anchor exposing (ToAnchorMsg(..))
+import Msg.Generic as GenericMsg
 import Msg.Msg exposing (Msg(..))
 import Msg.Phantom exposing (ToPhantomMsg(..))
 import View.Market.Ledger exposing (others, yours)
@@ -29,7 +30,7 @@ body buyer =
                         [ Html.button
                             [ class "is-button-1"
                             , style "width" "100%"
-                            , onClick (ToPhantom (SignMessage wallet))
+                            , onClick (ToJs <| GenericMsg.Download wallet ledger.release)
                             ]
                             [ Html.text "Download"
                             ]
@@ -296,21 +297,21 @@ body buyer =
 
                 Download downloadStatus ->
                     case downloadStatus of
-                        DownloadStatus.InvokedAndWaiting phantomSignature ->
+                        DownloadStatus.InvokedAndWaiting wallet ->
                             Html.div
                                 []
-                                [ slice_ phantomSignature.userDecoded
+                                [ slice_ wallet
                                 , Html.div
                                     [ class "is-loading"
                                     ]
                                     []
                                 ]
 
-                        DownloadStatus.Done response ->
+                        DownloadStatus.Done wallet _ ->
                             Html.div
                                 [ class "has-border-2 px-2 pt-2"
                                 ]
-                                [ slice_ response.user
+                                [ slice_ wallet
                                 , Html.div
                                     [ class "mb-3"
                                     ]
