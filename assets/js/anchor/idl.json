@@ -76,11 +76,11 @@
       ],
       "args": [
         {
-          "name": "hex",
+          "name": "key",
           "type": {
             "array": [
               "u8",
-              368
+              184
             ]
           }
         },
@@ -331,11 +331,11 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "hex",
+            "name": "key",
             "type": {
               "array": [
                 "u8",
-                368
+                184
               ]
             }
           },

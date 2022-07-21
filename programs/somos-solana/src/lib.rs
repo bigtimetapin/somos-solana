@@ -37,13 +37,13 @@ pub mod somos_solana {
 
     pub fn publish_assets(
         ctx: Context<PublishAssets>,
-        hex: [u8; 368],
+        key: [u8; 184],
         url: [u8; 78],
     ) -> Result<()> {
         let ledger = &mut ctx.accounts.ledger;
         match ledger.assets {
             None => {
-                ledger.assets = Some(EncryptedAssets { hex, url });
+                ledger.assets = Some(EncryptedAssets { key, url });
                 Ok(())
             }
             Some(_) => {
@@ -260,7 +260,7 @@ pub struct Ledger {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 pub struct EncryptedAssets {
-    pub hex: [u8; 368],
+    pub key: [u8; 184],
     pub url: [u8; 78],
 }
 

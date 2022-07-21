@@ -1,10 +1,10 @@
 import {Program, AnchorProvider, web3} from "@project-serum/anchor";
-import {Buffer} from "buffer";
 import {network, preflightCommitment, programID} from "./config.js";
 import {PhantomWallet} from "./wallet";
 import idl from "./idl.json";
 
-export const textEncoder = new TextEncoder()
+export const textEncoder = new TextEncoder();
+export const textDecoder = new TextDecoder();
 export const connection = new web3.Connection(network, preflightCommitment);
 
 // get provider & program
